@@ -7,7 +7,7 @@ export default function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const from =
-    (location.state as { from?: string } | null)?.from ?? '/consultations'
+    (location.state as { from?: string } | null)?.from ?? '/dashboard'
 
   const [email, setEmail] = useState('admin@consulthub.local')
   const [password, setPassword] = useState('consulthub')

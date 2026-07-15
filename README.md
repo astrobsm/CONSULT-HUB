@@ -60,6 +60,19 @@ Alembic migrations before production.
   demographics and that patient's consultations, plus a one-click "new consult for
   this patient" flow.
 
+### Dashboard
+
+- `GET /api/dashboard/summary` (tenant-scoped) returns operational KPIs: pending /
+  today / completed / overdue counts, completion rate, average acknowledgement and
+  completion time, pending-by-priority, a status breakdown, and top specialties.
+- Overdue = an unacknowledged consult whose elapsed time exceeds its
+  `required_response_minutes`.
+- UI is the landing page: KPI tiles + horizontal breakdown bars. Colors come from
+  the validated data-viz reference palette (reserved status hues for priority,
+  single sequential hue for magnitude), theme-aware for light/dark.
+- Note: metrics aggregate in Python at dev scale; move to SQL `GROUP BY` / a rollup
+  before large tenants.
+
 ## Frontend — quick start
 
 ```bash

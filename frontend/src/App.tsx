@@ -1,6 +1,7 @@
 import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { useAuth } from './auth/AuthContext'
 import RequireAuth from './auth/RequireAuth'
+import DashboardPage from './pages/DashboardPage'
 import ConsultationsListPage from './pages/ConsultationsListPage'
 import ConsultationCreatePage from './pages/ConsultationCreatePage'
 import ConsultationDetailPage from './pages/ConsultationDetailPage'
@@ -22,6 +23,7 @@ function Header() {
         Consult<span>HUB</span>
       </Link>
       <nav className="app__nav">
+        <Link to="/dashboard">Dashboard</Link>
         <Link to="/consultations">Consultations</Link>
         <Link to="/patients">Patients</Link>
         <Link to="/consultations/new" className="btn btn--primary">
@@ -50,7 +52,15 @@ export default function App() {
       <main className="app__main">
         <Routes>
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/" element={<Navigate to="/consultations" replace />} />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route
+            path="/dashboard"
+            element={
+              <RequireAuth>
+                <DashboardPage />
+              </RequireAuth>
+            }
+          />
           <Route
             path="/consultations"
             element={

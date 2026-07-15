@@ -81,6 +81,20 @@ export interface Patient {
   created_at: string
 }
 
+export interface DashboardSummary {
+  total: number
+  pending: number
+  today: number
+  completed: number
+  overdue: number
+  completion_rate: number
+  avg_ack_minutes: number | null
+  avg_completion_minutes: number | null
+  by_priority_pending: Record<Priority, number>
+  by_status: Record<string, number>
+  top_specialties: { specialty: string; count: number }[]
+}
+
 export interface PatientCreate {
   hospital_number: string
   full_name: string

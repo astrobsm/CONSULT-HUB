@@ -2,6 +2,7 @@ import type {
   Consultation,
   ConsultationCreate,
   ConsultationStatus,
+  DashboardSummary,
   Patient,
   PatientCreate,
 } from './types'
@@ -101,6 +102,12 @@ export function createPatient(payload: PatientCreate): Promise<Patient> {
     method: 'POST',
     body: JSON.stringify(payload),
   })
+}
+
+// ---- Dashboard ----
+
+export function getDashboardSummary(): Promise<DashboardSummary> {
+  return request<DashboardSummary>('/dashboard/summary')
 }
 
 export function health(): Promise<{ status: string; service: string }> {
