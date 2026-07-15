@@ -73,6 +73,26 @@ Alembic migrations before production.
 - Note: metrics aggregate in Python at dev scale; move to SQL `GROUP BY` / a rollup
   before large tenants.
 
+### Escalation engine
+
+- A background scheduler (APScheduler, in-process) periodically scans
+  unacknowledged, non-terminal consultations and fires every escalation threshold
+  each has crossed. Default policy (spec): **15 / 30 / 60 / 90 / 120 min** →
+  reminder, second reminder, consultant, HOD, Medical Director.
+- Each crossing writes an auditable `EscalationEvent` (and a consultation event);
+  the consultation's `escalation_level` tracks the highest level reached.
+  Acknowledging a consult stops further escalation.
+- The core is a pure function `run_escalations(db, now)` — deterministically
+  testable by injecting `now`. Notification delivery is a logging stub
+  (`_notify`) — wire it to push/SMS/email/WhatsApp later.
+- `GET /api/escalation/policy` returns the configured steps. Toggle/pace the engine
+  with `ESCALATION_ENABLED` / `ESCALATION_INTERVAL_SECONDS`.
+- UI: escalation badge on consult lists + a per-consult escalation history; the
+  dashboard shows an "Escalated" KPI.
+- **Scaling note:** in-process APScheduler runs per web process — with multiple
+  workers, move the job to a single scheduler process or Celery Beat + Redis (per
+  the spec) so escalations don't run N times.
+
 ## Frontend — quick start
 
 ```bash

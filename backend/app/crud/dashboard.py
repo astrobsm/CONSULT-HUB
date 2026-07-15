@@ -14,13 +14,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.consultation import Consultation
-from app.models.enums import ConsultationStatus, Priority
+from app.models.enums import TERMINAL_STATUSES, ConsultationStatus, Priority
 
-TERMINAL = {
-    ConsultationStatus.COMPLETED,
-    ConsultationStatus.CANCELLED,
-    ConsultationStatus.REJECTED,
-}
+TERMINAL = TERMINAL_STATUSES
 
 
 def _as_utc(dt: datetime) -> datetime:
@@ -67,6 +63,8 @@ def dashboard_summary(
         if elapsed > c.required_response_minutes:
             overdue += 1
 
+    escalated = sum(1 for c in pending if c.escalation_level > 0)
+
     specialty_counts = Counter(
         c.target_specialty for c in consults if c.target_specialty
     )
@@ -84,6 +82,7 @@ def dashboard_summary(
         "today": sum(1 for c in consults if _as_utc(c.created_at).date() == today),
         "completed": len(completed),
         "overdue": overdue,
+        "escalated": escalated,
         "completion_rate": round(len(completed) / total, 3) if total else 0.0,
         "avg_ack_minutes": avg(ack_minutes),
         "avg_completion_minutes": avg(completion_minutes),

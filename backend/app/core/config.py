@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 60 * 24  # 24h
 
+    # Escalation engine. Disable in tests; the interval drives the scheduler.
+    escalation_enabled: bool = True
+    escalation_interval_seconds: int = 60
+
     # Comma-separated origins allowed by CORS.
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
 

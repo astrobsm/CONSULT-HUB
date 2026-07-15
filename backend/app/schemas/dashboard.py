@@ -14,6 +14,7 @@ class DashboardSummary(BaseModel):
     today: int
     completed: int
     overdue: int
+    escalated: int
     completion_rate: float
     avg_ack_minutes: float | None
     avg_completion_minutes: float | None

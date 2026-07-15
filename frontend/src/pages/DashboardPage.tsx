@@ -74,6 +74,10 @@ function Tiles({ data }: { data: DashboardSummary }) {
         </span>
         <span className="tile__label">Overdue (no ack)</span>
       </div>
+      <div className={`tile ${data.escalated > 0 ? 'tile--warning' : ''}`}>
+        <span className="tile__value">{data.escalated}</span>
+        <span className="tile__label">Escalated</span>
+      </div>
       <div className="tile">
         <span className="tile__value">{pct}%</span>
         <span className="tile__label">Completion rate</span>

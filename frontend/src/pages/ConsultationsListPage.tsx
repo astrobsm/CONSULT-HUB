@@ -3,7 +3,11 @@ import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { listConsultations } from '../api/client'
 import { STATUSES, type ConsultationStatus } from '../api/types'
-import { PriorityBadge, StatusBadge } from '../components/StatusBadge'
+import {
+  EscalationBadge,
+  PriorityBadge,
+  StatusBadge,
+} from '../components/StatusBadge'
 
 export default function ConsultationsListPage() {
   const [statusFilter, setStatusFilter] = useState<ConsultationStatus | ''>('')
@@ -76,7 +80,8 @@ export default function ConsultationsListPage() {
                   <PriorityBadge priority={c.priority} />
                 </td>
                 <td>
-                  <StatusBadge status={c.status} />
+                  <StatusBadge status={c.status} />{' '}
+                  <EscalationBadge level={c.escalation_level} />
                 </td>
                 <td className="muted">
                   {new Date(c.created_at).toLocaleString()}

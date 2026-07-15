@@ -6,7 +6,11 @@ import {
   transitionConsultation,
 } from '../api/client'
 import { ALLOWED_TRANSITIONS, type ConsultationStatus } from '../api/types'
-import { PriorityBadge, StatusBadge } from '../components/StatusBadge'
+import {
+  EscalationBadge,
+  PriorityBadge,
+  StatusBadge,
+} from '../components/StatusBadge'
 
 export default function ConsultationDetailPage() {
   const { id } = useParams()
@@ -51,6 +55,7 @@ export default function ConsultationDetailPage() {
         <div className="badges">
           <PriorityBadge priority={data.priority} />
           <StatusBadge status={data.status} />
+          <EscalationBadge level={data.escalation_level} />
         </div>
       </div>
 
@@ -134,6 +139,29 @@ export default function ConsultationDetailPage() {
           <p className="error">{(mutation.error as Error).message}</p>
         )}
       </div>
+
+      {data.escalation_events.length > 0 && (
+        <div className="escalation">
+          <h2>Escalation history</h2>
+          <ol className="esc-list">
+            {data.escalation_events.map((ev) => (
+              <li key={ev.id}>
+                <span className="esc-level">L{ev.level}</span>
+                <div>
+                  <strong>{ev.label}</strong>
+                  <span className="muted">
+                    {' '}
+                    · at {ev.threshold_minutes} min · notify {ev.notify_role}
+                  </span>
+                  <div className="muted small">
+                    {new Date(ev.fired_at).toLocaleString()}
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
 
       <div className="timeline">
         <h2>Audit timeline</h2>

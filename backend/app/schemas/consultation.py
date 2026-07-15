@@ -18,6 +18,17 @@ class ConsultationEventRead(BaseModel):
     created_at: datetime
 
 
+class EscalationEventRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    level: int
+    label: str
+    threshold_minutes: int
+    notify_role: str
+    fired_at: datetime
+
+
 class ConsultationCreate(BaseModel):
     """Client payload. institution_id / requesting_user_id come from the token."""
 
@@ -50,11 +61,13 @@ class ConsultationRead(BaseModel):
     specific_questions: str | None
     required_response_minutes: int | None
     status: ConsultationStatus
+    escalation_level: int
     created_at: datetime
     updated_at: datetime
     acknowledged_at: datetime | None
     completed_at: datetime | None
     events: list[ConsultationEventRead] = []
+    escalation_events: list[EscalationEventRead] = []
 
 
 class ConsultationTransition(BaseModel):

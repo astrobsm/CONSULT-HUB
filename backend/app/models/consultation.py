@@ -50,6 +50,9 @@ class Consultation(Base):
     # Required response window in minutes; drives escalation.
     required_response_minutes: Mapped[int | None] = mapped_column(nullable=True)
 
+    # Highest escalation level reached (0 = none). Driven by the engine.
+    escalation_level: Mapped[int] = mapped_column(default=0)
+
     created_at: Mapped[datetime] = mapped_column(default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(default=utcnow, onupdate=utcnow)
     acknowledged_at: Mapped[datetime | None] = mapped_column(nullable=True)
@@ -59,6 +62,11 @@ class Consultation(Base):
         back_populates="consultation",
         cascade="all, delete-orphan",
         order_by="ConsultationEvent.created_at",
+    )
+    escalation_events: Mapped[list[EscalationEvent]] = relationship(
+        back_populates="consultation",
+        cascade="all, delete-orphan",
+        order_by="EscalationEvent.fired_at",
     )
 
 
@@ -80,3 +88,23 @@ class ConsultationEvent(Base):
     created_at: Mapped[datetime] = mapped_column(default=utcnow)
 
     consultation: Mapped[Consultation] = relationship(back_populates="events")
+
+
+class EscalationEvent(Base):
+    """Records each escalation threshold a consultation crossed."""
+
+    __tablename__ = "escalation_events"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    consultation_id: Mapped[int] = mapped_column(
+        ForeignKey("consultations.id"), index=True
+    )
+    level: Mapped[int] = mapped_column()
+    label: Mapped[str] = mapped_column(String(100))
+    threshold_minutes: Mapped[int] = mapped_column()
+    notify_role: Mapped[str] = mapped_column(String(50))
+    fired_at: Mapped[datetime] = mapped_column(default=utcnow)
+
+    consultation: Mapped[Consultation] = relationship(
+        back_populates="escalation_events"
+    )

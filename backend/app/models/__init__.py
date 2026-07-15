@@ -1,4 +1,8 @@
-from app.models.consultation import Consultation, ConsultationEvent
+from app.models.consultation import (
+    Consultation,
+    ConsultationEvent,
+    EscalationEvent,
+)
 from app.models.entities import Department, Institution, Patient, User
 
 __all__ = [
@@ -8,4 +12,5 @@ __all__ = [
     "Patient",
     "Consultation",
     "ConsultationEvent",
+    "EscalationEvent",
 ]

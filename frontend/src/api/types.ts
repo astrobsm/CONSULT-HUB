@@ -26,6 +26,15 @@ export interface ConsultationEvent {
   created_at: string
 }
 
+export interface EscalationEvent {
+  id: number
+  level: number
+  label: string
+  threshold_minutes: number
+  notify_role: string
+  fired_at: string
+}
+
 export interface Consultation {
   id: number
   patient_id: number | null
@@ -41,11 +50,13 @@ export interface Consultation {
   clinical_summary: string | null
   specific_questions: string | null
   required_response_minutes: number | null
+  escalation_level: number
   created_at: string
   updated_at: string
   acknowledged_at: string | null
   completed_at: string | null
   events: ConsultationEvent[]
+  escalation_events: EscalationEvent[]
 }
 
 export interface ConsultationCreate {
@@ -87,6 +98,7 @@ export interface DashboardSummary {
   today: number
   completed: number
   overdue: number
+  escalated: number
   completion_rate: number
   avg_ack_minutes: number | null
   avg_completion_minutes: number | null

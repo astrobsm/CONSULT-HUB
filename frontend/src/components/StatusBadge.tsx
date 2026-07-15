@@ -13,3 +13,12 @@ export function PriorityBadge({ priority }: { priority: Priority }) {
 function label(status: ConsultationStatus): string {
   return status.replace(/_/g, ' ')
 }
+
+export function EscalationBadge({ level }: { level: number }) {
+  if (level <= 0) return null
+  return (
+    <span className="badge badge--escalation" title={`Escalation level ${level}`}>
+      ▲ Escalated · L{level}
+    </span>
+  )
+}

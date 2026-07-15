@@ -52,6 +52,14 @@ class ConsultationStatus(str, enum.Enum):
     CANCELLED = "cancelled"
 
 
+# States in which a consultation is closed and needs no further action.
+TERMINAL_STATUSES: set[ConsultationStatus] = {
+    ConsultationStatus.COMPLETED,
+    ConsultationStatus.CANCELLED,
+    ConsultationStatus.REJECTED,
+}
+
+
 # Allowed forward transitions. Terminal states map to an empty set.
 STATUS_TRANSITIONS: dict[ConsultationStatus, set[ConsultationStatus]] = {
     ConsultationStatus.DRAFT: {
