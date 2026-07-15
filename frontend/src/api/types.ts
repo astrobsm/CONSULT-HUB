@@ -1,0 +1,78 @@
+export const PRIORITIES = ['routine', 'urgent', 'emergency'] as const
+export type Priority = (typeof PRIORITIES)[number]
+
+export const CONSULTATION_TYPES = [
+  'routine', 'urgent', 'emergency', 'icu', 'ward', 'clinic',
+  'emergency_department', 'theatre', 'preoperative', 'postoperative',
+  'nutrition', 'pain_management', 'rehabilitation', 'psychological',
+  'social_welfare', 'teleconsultation', 'second_opinion', 'tumor_board',
+  'mdt', 'referral', 'home_care', 'palliative_care', 'discharge_planning',
+] as const
+export type ConsultationType = (typeof CONSULTATION_TYPES)[number]
+
+export const STATUSES = [
+  'draft', 'submitted', 'received', 'viewed', 'acknowledged', 'accepted',
+  'seen', 'transferred', 'delegated', 'rejected', 'returned', 'escalated',
+  'completed', 'cancelled',
+] as const
+export type ConsultationStatus = (typeof STATUSES)[number]
+
+export interface ConsultationEvent {
+  id: number
+  from_status: ConsultationStatus | null
+  to_status: ConsultationStatus | null
+  actor_user_id: number | null
+  note: string | null
+  created_at: string
+}
+
+export interface Consultation {
+  id: number
+  patient_id: number | null
+  requesting_user_id: number | null
+  institution_id: number | null
+  target_department_id: number | null
+  target_specialty: string | null
+  target_consultant: string | null
+  consultation_type: ConsultationType
+  priority: Priority
+  status: ConsultationStatus
+  reason: string
+  clinical_summary: string | null
+  specific_questions: string | null
+  required_response_minutes: number | null
+  created_at: string
+  updated_at: string
+  acknowledged_at: string | null
+  completed_at: string | null
+  events: ConsultationEvent[]
+}
+
+export interface ConsultationCreate {
+  reason: string
+  priority: Priority
+  consultation_type: ConsultationType
+  target_specialty?: string | null
+  target_consultant?: string | null
+  clinical_summary?: string | null
+  specific_questions?: string | null
+  required_response_minutes?: number | null
+}
+
+/** Forward transitions allowed from each status — mirrors the backend engine. */
+export const ALLOWED_TRANSITIONS: Record<ConsultationStatus, ConsultationStatus[]> = {
+  draft: ['submitted', 'cancelled'],
+  submitted: ['received', 'acknowledged', 'escalated', 'cancelled'],
+  received: ['viewed', 'acknowledged', 'escalated', 'cancelled'],
+  viewed: ['acknowledged', 'escalated', 'cancelled'],
+  acknowledged: ['accepted', 'transferred', 'delegated', 'rejected', 'returned', 'escalated', 'cancelled'],
+  accepted: ['seen', 'transferred', 'delegated', 'escalated', 'cancelled'],
+  seen: ['completed', 'returned', 'escalated'],
+  transferred: ['acknowledged', 'cancelled'],
+  delegated: ['acknowledged', 'cancelled'],
+  returned: ['submitted', 'cancelled'],
+  rejected: [],
+  escalated: ['acknowledged', 'accepted', 'cancelled'],
+  completed: [],
+  cancelled: [],
+}
