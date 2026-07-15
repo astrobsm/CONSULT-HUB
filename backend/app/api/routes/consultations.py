@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user
 from app.core.database import get_db
 from app.crud import consultation as crud
+from app.crud import patient as crud_patient
 from app.crud.consultation import InvalidTransition
 from app.models.consultation import Consultation
 from app.models.entities import User
@@ -43,6 +44,16 @@ def create_consultation(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> ConsultationRead:
+    if payload.patient_id is not None:
+        patient = crud_patient.get_patient(db, payload.patient_id)
+        same_tenant = patient is not None and (
+            current_user.institution_id is None
+            or patient.institution_id == current_user.institution_id
+        )
+        if not same_tenant:
+            raise HTTPException(
+                status_code=422, detail="Patient not found in your institution"
+            )
     return crud.create_consultation(
         db,
         payload,
@@ -56,6 +67,7 @@ def list_consultations(
     status_filter: ConsultationStatus | None = Query(
         default=None, alias="status"
     ),
+    patient_id: int | None = Query(default=None),
     limit: int = Query(default=100, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
@@ -64,6 +76,7 @@ def list_consultations(
     return crud.list_consultations(
         db,
         institution_id=current_user.institution_id,
+        patient_id=patient_id,
         status=status_filter,
         limit=limit,
         offset=offset,

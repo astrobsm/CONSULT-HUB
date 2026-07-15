@@ -49,6 +49,7 @@ export interface Consultation {
 }
 
 export interface ConsultationCreate {
+  patient_id?: number | null
   reason: string
   priority: Priority
   consultation_type: ConsultationType
@@ -57,6 +58,43 @@ export interface ConsultationCreate {
   clinical_summary?: string | null
   specific_questions?: string | null
   required_response_minutes?: number | null
+}
+
+export interface Patient {
+  id: number
+  institution_id: number | null
+  hospital_number: string
+  full_name: string
+  date_of_birth: string | null
+  sex: string | null
+  phone: string | null
+  blood_group: string | null
+  genotype: string | null
+  weight_kg: number | null
+  height_cm: number | null
+  ward: string | null
+  bed: string | null
+  primary_diagnosis: string | null
+  allergies: string | null
+  age: number | null
+  bmi: number | null
+  created_at: string
+}
+
+export interface PatientCreate {
+  hospital_number: string
+  full_name: string
+  date_of_birth?: string | null
+  sex?: string | null
+  phone?: string | null
+  blood_group?: string | null
+  genotype?: string | null
+  weight_kg?: number | null
+  height_cm?: number | null
+  ward?: string | null
+  bed?: string | null
+  primary_diagnosis?: string | null
+  allergies?: string | null
 }
 
 /** Forward transitions allowed from each status — mirrors the backend engine. */

@@ -10,7 +10,8 @@ export default function ConsultationsListPage() {
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['consultations', statusFilter],
-    queryFn: () => listConsultations(statusFilter || undefined),
+    queryFn: () =>
+      listConsultations(statusFilter ? { status: statusFilter } : undefined),
   })
 
   return (

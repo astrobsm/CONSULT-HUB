@@ -4,6 +4,9 @@ import RequireAuth from './auth/RequireAuth'
 import ConsultationsListPage from './pages/ConsultationsListPage'
 import ConsultationCreatePage from './pages/ConsultationCreatePage'
 import ConsultationDetailPage from './pages/ConsultationDetailPage'
+import PatientsListPage from './pages/PatientsListPage'
+import PatientCreatePage from './pages/PatientCreatePage'
+import PatientDetailPage from './pages/PatientDetailPage'
 import LoginPage from './pages/LoginPage'
 
 function Header() {
@@ -20,6 +23,7 @@ function Header() {
       </Link>
       <nav className="app__nav">
         <Link to="/consultations">Consultations</Link>
+        <Link to="/patients">Patients</Link>
         <Link to="/consultations/new" className="btn btn--primary">
           + New consult
         </Link>
@@ -68,6 +72,30 @@ export default function App() {
             element={
               <RequireAuth>
                 <ConsultationDetailPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/patients"
+            element={
+              <RequireAuth>
+                <PatientsListPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/patients/new"
+            element={
+              <RequireAuth>
+                <PatientCreatePage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/patients/:id"
+            element={
+              <RequireAuth>
+                <PatientDetailPage />
               </RequireAuth>
             }
           />

@@ -52,6 +52,7 @@ def list_consultations(
     db: Session,
     *,
     institution_id: int | None = None,
+    patient_id: int | None = None,
     status: ConsultationStatus | None = None,
     limit: int = 100,
     offset: int = 0,
@@ -59,6 +60,8 @@ def list_consultations(
     stmt = select(Consultation).order_by(Consultation.created_at.desc())
     if institution_id is not None:
         stmt = stmt.where(Consultation.institution_id == institution_id)
+    if patient_id is not None:
+        stmt = stmt.where(Consultation.patient_id == patient_id)
     if status is not None:
         stmt = stmt.where(Consultation.status == status)
     stmt = stmt.limit(limit).offset(offset)

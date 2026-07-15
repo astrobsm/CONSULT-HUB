@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { createConsultation } from '../api/client'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { createConsultation, listPatients } from '../api/client'
 import {
   CONSULTATION_TYPES,
   PRIORITIES,
@@ -9,6 +9,7 @@ import {
 } from '../api/types'
 
 const EMPTY: ConsultationCreate = {
+  patient_id: null,
   reason: '',
   priority: 'routine',
   consultation_type: 'ward',
@@ -20,9 +21,19 @@ const EMPTY: ConsultationCreate = {
 }
 
 export default function ConsultationCreatePage() {
-  const [form, setForm] = useState<ConsultationCreate>(EMPTY)
+  const [searchParams] = useSearchParams()
+  const preselectedPatient = searchParams.get('patient')
+  const [form, setForm] = useState<ConsultationCreate>({
+    ...EMPTY,
+    patient_id: preselectedPatient ? Number(preselectedPatient) : null,
+  })
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+
+  const { data: patients } = useQuery({
+    queryKey: ['patients', ''],
+    queryFn: () => listPatients(),
+  })
 
   const mutation = useMutation({
     mutationFn: (payload: ConsultationCreate) => createConsultation(payload),
@@ -54,6 +65,24 @@ export default function ConsultationCreatePage() {
     <section className="form-page">
       <h1>New consultation</h1>
       <form onSubmit={onSubmit} className="form">
+        <label className="field field--full">
+          <span>Patient</span>
+          <select
+            value={form.patient_id ?? ''}
+            onChange={(e) =>
+              update('patient_id', e.target.value ? Number(e.target.value) : null)
+            }
+          >
+            <option value="">— No patient linked —</option>
+            {patients?.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.full_name} ({p.hospital_number})
+                {p.ward ? ` · ${p.ward}` : ''}
+              </option>
+            ))}
+          </select>
+        </label>
+
         <label className="field field--full">
           <span>Reason for consultation *</span>
           <input

@@ -1,6 +1,10 @@
 import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { getConsultation, transitionConsultation } from '../api/client'
+import {
+  getConsultation,
+  getPatient,
+  transitionConsultation,
+} from '../api/client'
 import { ALLOWED_TRANSITIONS, type ConsultationStatus } from '../api/types'
 import { PriorityBadge, StatusBadge } from '../components/StatusBadge'
 
@@ -13,6 +17,12 @@ export default function ConsultationDetailPage() {
     queryKey: ['consultation', consultId],
     queryFn: () => getConsultation(consultId),
     enabled: Number.isFinite(consultId),
+  })
+
+  const { data: patient } = useQuery({
+    queryKey: ['patient', data?.patient_id],
+    queryFn: () => getPatient(data!.patient_id!),
+    enabled: data?.patient_id != null,
   })
 
   const mutation = useMutation({
@@ -45,6 +55,21 @@ export default function ConsultationDetailPage() {
       </div>
 
       <dl className="detail__grid">
+        <div className="detail__full">
+          <dt>Patient</dt>
+          <dd>
+            {patient ? (
+              <Link to={`/patients/${patient.id}`}>
+                {patient.full_name} ({patient.hospital_number})
+                {patient.age != null ? ` · ${patient.age}y` : ''}
+                {patient.sex ? ` · ${patient.sex}` : ''}
+                {patient.ward ? ` · ${patient.ward}` : ''}
+              </Link>
+            ) : (
+              <span className="muted">No patient linked</span>
+            )}
+          </dd>
+        </div>
         <div>
           <dt>Reason</dt>
           <dd>{data.reason}</dd>

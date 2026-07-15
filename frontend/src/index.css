@@ -194,6 +194,22 @@ h2 { font-size: 1.05rem; margin: 1.5rem 0 0.75rem; }
 
 .action-buttons { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 
+/* Search bar */
+.search-bar {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+.search-bar input {
+  flex: 1;
+  font: inherit;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+}
+
 /* Auth */
 .center { text-align: center; margin-top: 3rem; }
 .login {

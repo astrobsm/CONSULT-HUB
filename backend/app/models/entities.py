@@ -35,7 +35,9 @@ class Department(Base):
     name: Mapped[str] = mapped_column(String(150))
     specialty: Mapped[str | None] = mapped_column(String(150), nullable=True)
 
-    institution: Mapped[Institution] = relationship(back_populates="departments")
+    institution: Mapped[Institution] = relationship(
+        back_populates="departments"
+    )
 
 
 class User(Base):
@@ -67,11 +69,18 @@ class Patient(Base):
         ForeignKey("institutions.id"), nullable=True
     )
     hospital_number: Mapped[str] = mapped_column(String(50), index=True)
-    full_name: Mapped[str] = mapped_column(String(150))
+    full_name: Mapped[str] = mapped_column(String(150), index=True)
     date_of_birth: Mapped[date | None] = mapped_column(nullable=True)
     sex: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    phone: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    blood_group: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    genotype: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    weight_kg: Mapped[float | None] = mapped_column(nullable=True)
+    height_cm: Mapped[float | None] = mapped_column(nullable=True)
     ward: Mapped[str | None] = mapped_column(String(100), nullable=True)
     bed: Mapped[str | None] = mapped_column(String(50), nullable=True)
-    primary_diagnosis: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    primary_diagnosis: Mapped[str | None] = mapped_column(
+        String(300), nullable=True
+    )
     allergies: Mapped[str | None] = mapped_column(String(300), nullable=True)
     created_at: Mapped[datetime] = mapped_column(default=utcnow)

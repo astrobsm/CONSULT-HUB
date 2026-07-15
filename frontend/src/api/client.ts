@@ -2,6 +2,8 @@ import type {
   Consultation,
   ConsultationCreate,
   ConsultationStatus,
+  Patient,
+  PatientCreate,
 } from './types'
 
 const BASE = '/api'
@@ -48,11 +50,15 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>
 }
 
-export function listConsultations(
-  status?: ConsultationStatus,
-): Promise<Consultation[]> {
-  const qs = status ? `?status=${status}` : ''
-  return request<Consultation[]>(`/consultations${qs}`)
+export function listConsultations(opts?: {
+  status?: ConsultationStatus
+  patientId?: number
+}): Promise<Consultation[]> {
+  const params = new URLSearchParams()
+  if (opts?.status) params.set('status', opts.status)
+  if (opts?.patientId != null) params.set('patient_id', String(opts.patientId))
+  const qs = params.toString()
+  return request<Consultation[]>(`/consultations${qs ? `?${qs}` : ''}`)
 }
 
 export function getConsultation(id: number): Promise<Consultation> {
@@ -76,6 +82,24 @@ export function transitionConsultation(
   return request<Consultation>(`/consultations/${id}/transition`, {
     method: 'POST',
     body: JSON.stringify({ to_status: toStatus, note: note || null }),
+  })
+}
+
+// ---- Patients ----
+
+export function listPatients(search?: string): Promise<Patient[]> {
+  const qs = search ? `?search=${encodeURIComponent(search)}` : ''
+  return request<Patient[]>(`/patients${qs}`)
+}
+
+export function getPatient(id: number): Promise<Patient> {
+  return request<Patient>(`/patients/${id}`)
+}
+
+export function createPatient(payload: PatientCreate): Promise<Patient> {
+  return request<Patient>('/patients', {
+    method: 'POST',
+    body: JSON.stringify(payload),
   })
 }
 

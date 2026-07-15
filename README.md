@@ -48,6 +48,18 @@ Alembic migrations before production.
 - `secret_key` MUST be overridden via env in any real deployment. Password hashing
   is PBKDF2-HMAC-SHA256 (stdlib); swap for argon2/bcrypt before production.
 
+### Patients
+
+- Tenant-scoped patient registry: `POST /api/patients`, `GET /api/patients`
+  (with `?search=` over name / hospital number), `GET /api/patients/{id}`.
+- `age` and `bmi` are computed server-side and returned read-only.
+- Consultations can link a patient (`patient_id`); the API rejects references to
+  patients outside the caller's institution (422). List consultations for a
+  patient with `GET /api/consultations?patient_id={id}`.
+- UI: patient list + search, registration form, and a patient detail page showing
+  demographics and that patient's consultations, plus a one-click "new consult for
+  this patient" flow.
+
 ## Frontend — quick start
 
 ```bash

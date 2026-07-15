@@ -7,11 +7,13 @@ Run from the backend directory:
 
 from __future__ import annotations
 
+from datetime import date
+
 from sqlalchemy import select
 
 from app.core.database import Base, SessionLocal, engine
 from app.core.security import hash_password
-from app.models.entities import Department, Institution, User
+from app.models.entities import Department, Institution, Patient, User
 
 # Import models so all tables register before create_all.
 import app.models  # noqa: F401
@@ -67,7 +69,10 @@ def seed() -> None:
                     ),
                 ]
             )
-            print(f"Created institution '{institution.name}' with 3 departments.")
+            print(
+                f"Created institution '{institution.name}' "
+                "with 3 departments."
+            )
         else:
             print(f"Institution '{institution.name}' already exists.")
 
@@ -88,12 +93,66 @@ def seed() -> None:
                     institution_id=institution.id,
                 )
             )
-            print(f"Created user {spec['email']} (password: {spec['password']}).")
+            print(
+                f"Created user {spec['email']} "
+                f"(password: {spec['password']})."
+            )
+
+        _seed_patients(db, institution.id)
 
         db.commit()
-        print("\nSeed complete. Log in with admin@consulthub.local / consulthub")
+        print(
+            "\nSeed complete. Log in with "
+            "admin@consulthub.local / consulthub"
+        )
     finally:
         db.close()
+
+
+DEMO_PATIENTS = [
+    {
+        "hospital_number": "MRN-100234",
+        "full_name": "Grace Adeyemi",
+        "date_of_birth": date(1959, 3, 12),
+        "sex": "Female",
+        "blood_group": "O+",
+        "genotype": "AA",
+        "weight_kg": 72.0,
+        "height_cm": 162.0,
+        "ward": "Male Medical Ward",
+        "bed": "12",
+        "primary_diagnosis": "Type 2 Diabetes Mellitus with foot ulcer",
+        "allergies": "Penicillin",
+    },
+    {
+        "hospital_number": "MRN-100517",
+        "full_name": "Emeka Nwosu",
+        "date_of_birth": date(1987, 11, 2),
+        "sex": "Male",
+        "blood_group": "A+",
+        "genotype": "AS",
+        "weight_kg": 68.0,
+        "height_cm": 175.0,
+        "ward": "Surgical Ward",
+        "bed": "4",
+        "primary_diagnosis": "Post-laparotomy, prolonged ileus",
+        "allergies": None,
+    },
+]
+
+
+def _seed_patients(db, institution_id: int) -> None:
+    for spec in DEMO_PATIENTS:
+        existing = db.scalar(
+            select(Patient).where(
+                Patient.hospital_number == spec["hospital_number"]
+            )
+        )
+        if existing:
+            print(f"Patient {spec['hospital_number']} already exists.")
+            continue
+        db.add(Patient(**spec, institution_id=institution_id))
+        print(f"Created patient {spec['full_name']} ({spec['hospital_number']}).")
 
 
 if __name__ == "__main__":
