@@ -3,6 +3,7 @@ import type {
   Attachment,
   Consultation,
   ConsultationCreate,
+  ConsultationMessage,
   ConsultationStatus,
   DashboardSummary,
   Patient,
@@ -270,6 +271,26 @@ export async function downloadAttachment(
   a.click()
   a.remove()
   URL.revokeObjectURL(url)
+}
+
+// ---- Consultation messages (secure chat) ----
+
+export function listMessages(
+  consultationId: number,
+): Promise<ConsultationMessage[]> {
+  return request<ConsultationMessage[]>(
+    `/consultations/${consultationId}/messages`,
+  )
+}
+
+export function postMessage(
+  consultationId: number,
+  body: string,
+): Promise<ConsultationMessage> {
+  return request<ConsultationMessage>(
+    `/consultations/${consultationId}/messages`,
+    { method: 'POST', body: JSON.stringify({ body }) },
+  )
 }
 
 export function health(): Promise<{ status: string; service: string }> {

@@ -146,6 +146,23 @@ Alembic migrations before production.
   list attachments with size/type, download (authenticated fetch → blob), delete.
   Downloads use an auth header (not a bare link), so files stay access-controlled.
 
+### Secure discussion (per-consultation chat)
+
+- Threaded messages on a consultation: `GET /api/consultations/{id}/messages`,
+  `POST /api/consultations/{id}/messages` — tenant-scoped (cross-tenant 404).
+- Posting a message notifies the requester and prior thread participants (never
+  the sender) via the in-app notification system.
+- UI: a discussion panel on the consult detail page (own messages right-aligned,
+  Enter to send, polls every 15s for new messages).
+
+### Account self-service
+
+- `PATCH /api/auth/me` edits the caller's own profile (full name, designation);
+  role and institution remain admin-controlled.
+- `POST /api/auth/change-password` verifies the current password before setting a
+  new one. UI: an Account page (linked from the header name) with profile and
+  change-password forms.
+
 ## Frontend — quick start
 
 ```bash

@@ -5,6 +5,7 @@ from app.models.consultation import (
 )
 from app.models.attachment import Attachment
 from app.models.entities import Department, Institution, Patient, User
+from app.models.message import ConsultationMessage
 from app.models.notification import Notification
 
 __all__ = [
@@ -17,4 +18,5 @@ __all__ = [
     "EscalationEvent",
     "Notification",
     "Attachment",
+    "ConsultationMessage",
 ]

@@ -12,6 +12,7 @@ import {
   StatusBadge,
 } from '../components/StatusBadge'
 import AttachmentsPanel from '../components/AttachmentsPanel'
+import ConsultationChat from '../components/ConsultationChat'
 
 export default function ConsultationDetailPage() {
   const { id } = useParams()
@@ -142,6 +143,8 @@ export default function ConsultationDetailPage() {
       </div>
 
       <AttachmentsPanel consultationId={data.id} />
+
+      <ConsultationChat consultationId={data.id} />
 
       {data.escalation_events.length > 0 && (
         <div className="escalation">

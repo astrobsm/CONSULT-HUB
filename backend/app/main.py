@@ -11,6 +11,7 @@ from app.api.routes import (
     consultations,
     dashboard,
     escalation,
+    messages,
     notifications,
     org,
     patients,
@@ -80,3 +81,4 @@ app.include_router(notifications.router, prefix=settings.api_prefix)
 app.include_router(users.router, prefix=settings.api_prefix)
 app.include_router(org.router, prefix=settings.api_prefix)
 app.include_router(attachments.router, prefix=settings.api_prefix)
+app.include_router(messages.router, prefix=settings.api_prefix)

@@ -77,6 +77,34 @@ def notify_escalation(
             send_email(user.email, title, body)
 
 
+def notify_new_message(
+    db: Session,
+    consultation: Consultation,
+    *,
+    sender_id: int,
+    sender_name: str,
+    body: str,
+    participant_ids: set[int],
+) -> None:
+    """Notify the requester and prior thread participants (except the sender)."""
+    recipients: set[int] = set(participant_ids)
+    if consultation.requesting_user_id:
+        recipients.add(consultation.requesting_user_id)
+    recipients.discard(sender_id)
+
+    preview = body if len(body) <= 140 else body[:137] + "…"
+    for user_id in recipients:
+        crud.create_notification(
+            db,
+            user_id=user_id,
+            institution_id=consultation.institution_id,
+            consultation_id=consultation.id,
+            kind="message",
+            title=f"New message on consult #{consultation.id}",
+            body=f"{sender_name}: {preview}",
+        )
+
+
 # Status changes worth telling the requester about.
 _NOTIFY_STATUSES = {
     ConsultationStatus.ACKNOWLEDGED,

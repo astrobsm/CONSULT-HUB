@@ -92,6 +92,15 @@ export interface Patient {
   created_at: string
 }
 
+export interface ConsultationMessage {
+  id: number
+  consultation_id: number
+  sender_user_id: number
+  sender_name: string
+  body: string
+  created_at: string
+}
+
 export interface Attachment {
   id: number
   consultation_id: number
