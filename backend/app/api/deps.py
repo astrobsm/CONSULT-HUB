@@ -8,6 +8,7 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.core.roles import ADMIN_ROLES, SUPER_ADMIN
 from app.core.security import decode_access_token
 from app.core.database import get_db
 from app.models.entities import User
@@ -51,3 +52,25 @@ def require_roles(*roles: str) -> Callable[[User], User]:
         return current_user
 
     return checker
+
+
+def require_admin(current_user: User = Depends(get_current_user)) -> User:
+    """Allow only super/institution admins."""
+    if current_user.role not in ADMIN_ROLES:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Administrator access required",
+        )
+    return current_user
+
+
+def assert_can_manage_institution(actor: User, institution_id: int | None) -> None:
+    """A super admin manages any tenant; others only their own."""
+    if actor.role == SUPER_ADMIN:
+        return
+    if institution_id is not None and actor.institution_id == institution_id:
+        return
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="You can only manage your own institution",
+    )

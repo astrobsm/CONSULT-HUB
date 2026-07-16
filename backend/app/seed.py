@@ -21,6 +21,14 @@ import app.models  # noqa: F401
 DEMO_INSTITUTION_CODE = "DEMO"
 DEMO_USERS = [
     {
+        "full_name": "System Administrator",
+        "email": "superadmin@consulthub.local",
+        "password": "consulthub",
+        "role": "super_admin",
+        "designation": "Platform Super Admin",
+        "institution_id": None,  # cross-tenant
+    },
+    {
         "full_name": "Dr. Amina Bello",
         "email": "admin@consulthub.local",
         "password": "consulthub",
@@ -33,6 +41,13 @@ DEMO_USERS = [
         "password": "consulthub",
         "role": "registrar",
         "designation": "Senior Registrar, Internal Medicine",
+    },
+    {
+        "full_name": "Dr. Ngozi Eze",
+        "email": "consultant@consulthub.local",
+        "password": "consulthub",
+        "role": "consultant",
+        "designation": "Consultant Plastic Surgeon",
     },
 ]
 
@@ -90,7 +105,7 @@ def seed() -> None:
                     hashed_password=hash_password(spec["password"]),
                     role=spec["role"],
                     designation=spec["designation"],
-                    institution_id=institution.id,
+                    institution_id=spec.get("institution_id", institution.id),
                 )
             )
             print(

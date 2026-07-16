@@ -136,6 +136,83 @@ export function markAllNotificationsRead(): Promise<{ unread: number }> {
   })
 }
 
+// ---- Admin: users ----
+
+export interface CreateUserInput {
+  full_name: string
+  email: string
+  password: string
+  role: string
+  designation?: string | null
+  department_id?: number | null
+  institution_id?: number | null
+}
+
+export interface UpdateUserInput {
+  role?: string
+  designation?: string | null
+  department_id?: number | null
+  is_active?: boolean
+}
+
+export function listRoles(): Promise<string[]> {
+  return request<string[]>('/users/roles')
+}
+
+export function listUsers(): Promise<AuthUser[]> {
+  return request<AuthUser[]>('/users')
+}
+
+export function createUser(payload: CreateUserInput): Promise<AuthUser> {
+  return request<AuthUser>('/users', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function updateUser(
+  id: number,
+  payload: UpdateUserInput,
+): Promise<AuthUser> {
+  return request<AuthUser>(`/users/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+// ---- Admin: org ----
+
+export interface Department {
+  id: number
+  institution_id: number
+  name: string
+  specialty: string | null
+}
+
+export function listDepartments(): Promise<Department[]> {
+  return request<Department[]>('/departments')
+}
+
+export function createDepartment(payload: {
+  name: string
+  specialty?: string | null
+}): Promise<Department> {
+  return request<Department>('/departments', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function updateDepartment(
+  id: number,
+  payload: { name?: string; specialty?: string | null },
+): Promise<Department> {
+  return request<Department>(`/departments/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
 export function health(): Promise<{ status: string; service: string }> {
   return request('/health')
 }
@@ -149,8 +226,14 @@ export interface AuthUser {
   role: string
   designation: string | null
   institution_id: number | null
+  department_id: number | null
   is_active: boolean
   created_at: string
+}
+
+export const ADMIN_ROLES = ['super_admin', 'institution_admin']
+export function isAdminRole(role: string | undefined): boolean {
+  return role != null && ADMIN_ROLES.includes(role)
 }
 
 interface TokenResponse {

@@ -30,7 +30,9 @@ uvicorn app.main:app --reload
 - API docs: http://localhost:8000/docs
 - Health:   http://localhost:8000/api/health
 
-**Demo login:** `admin@consulthub.local` / `consulthub` (also a `registrar@…`).
+**Demo logins** (all password `consulthub`): `superadmin@consulthub.local`
+(super admin), `admin@consulthub.local` (institution admin), `registrar@…`,
+`consultant@…`.
 
 Dev uses SQLite (`consulthub.db`) out of the box. Set `DATABASE_URL` in `backend/.env`
 to point at PostgreSQL for production. Tables are auto-created on startup; wire up
@@ -47,6 +49,24 @@ Alembic migrations before production.
   their own institution (cross-tenant reads return 404).
 - `secret_key` MUST be overridden via env in any real deployment. Password hashing
   is PBKDF2-HMAC-SHA256 (stdlib); swap for argon2/bcrypt before production.
+
+### Administration & RBAC
+
+- **Self-registration is disabled.** Admins create users via `POST /api/users`;
+  the first admin comes from the seed script. Roles are defined in
+  `app/core/roles.py` (17 roles); `GET /api/users/roles` lists them.
+- **Admin tiers:** `super_admin` (cross-tenant) and `institution_admin`
+  (own institution). `require_admin` gates the admin surface.
+- **User management** (`/api/users`): list / create / get / update
+  (role, department, active). Guards enforced: non-super admins are scoped to
+  their own institution (cross-tenant reads 404), only a super admin may grant
+  `super_admin`, and you cannot deactivate your own account.
+- **Org management:** `/api/institutions` (super admin creates tenants; others
+  see only their own) and `/api/departments` (list / create / rename, tenant-scoped).
+- UI: an **Admin** section (visible only to admins) with Users and Departments
+  tabs — create users, change roles/department inline, activate/deactivate, and
+  manage departments. Escalation recipient roles (consultant / HOD / MD) are now
+  real users you can assign here.
 
 ### Patients
 

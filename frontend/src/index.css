@@ -318,6 +318,36 @@ a.tile:hover { border-color: var(--primary); text-decoration: none; }
 .sdot--warn { background: var(--viz-warning); }
 .sdot--neutral { background: var(--viz-neutral); }
 
+/* Admin */
+.admin-tabs {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.25rem;
+}
+.admin-tab {
+  padding: 0.5rem 0.9rem;
+  color: var(--muted);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+.admin-tab:hover { text-decoration: none; color: var(--text); }
+.admin-tab--active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  font-weight: 600;
+}
+.row--inactive { opacity: 0.55; }
+.table select {
+  font: inherit;
+  padding: 0.3rem 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  text-transform: capitalize;
+}
+
 /* Search bar */
 .search-bar {
   display: flex;

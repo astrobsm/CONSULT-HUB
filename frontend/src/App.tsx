@@ -1,7 +1,11 @@
 import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { useAuth } from './auth/AuthContext'
 import RequireAuth from './auth/RequireAuth'
+import RequireAdmin from './auth/RequireAdmin'
+import { isAdminRole } from './api/client'
 import NotificationBell from './components/NotificationBell'
+import AdminUsersPage from './pages/AdminUsersPage'
+import AdminDepartmentsPage from './pages/AdminDepartmentsPage'
 import DashboardPage from './pages/DashboardPage'
 import ConsultationsListPage from './pages/ConsultationsListPage'
 import ConsultationCreatePage from './pages/ConsultationCreatePage'
@@ -27,6 +31,7 @@ function Header() {
         <Link to="/dashboard">Dashboard</Link>
         <Link to="/consultations">Consultations</Link>
         <Link to="/patients">Patients</Link>
+        {isAdminRole(user?.role) && <Link to="/admin/users">Admin</Link>}
         <Link to="/consultations/new" className="btn btn--primary">
           + New consult
         </Link>
@@ -109,6 +114,26 @@ export default function App() {
               <RequireAuth>
                 <PatientDetailPage />
               </RequireAuth>
+            }
+          />
+          <Route
+            path="/admin"
+            element={<Navigate to="/admin/users" replace />}
+          />
+          <Route
+            path="/admin/users"
+            element={
+              <RequireAdmin>
+                <AdminUsersPage />
+              </RequireAdmin>
+            }
+          />
+          <Route
+            path="/admin/departments"
+            element={
+              <RequireAdmin>
+                <AdminDepartmentsPage />
+              </RequireAdmin>
             }
           />
         </Routes>

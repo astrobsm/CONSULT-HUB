@@ -11,7 +11,9 @@ from app.api.routes import (
     dashboard,
     escalation,
     notifications,
+    org,
     patients,
+    users,
 )
 from app.core.config import settings
 from app.core.database import Base, engine
@@ -74,3 +76,5 @@ app.include_router(consultations.router, prefix=settings.api_prefix)
 app.include_router(dashboard.router, prefix=settings.api_prefix)
 app.include_router(escalation.router, prefix=settings.api_prefix)
 app.include_router(notifications.router, prefix=settings.api_prefix)
+app.include_router(users.router, prefix=settings.api_prefix)
+app.include_router(org.router, prefix=settings.api_prefix)

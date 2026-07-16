@@ -9,7 +9,7 @@ from app.core.database import get_db
 from app.core.security import create_access_token
 from app.crud import user as crud_user
 from app.models.entities import User
-from app.schemas.auth import Token, UserRead, UserRegister
+from app.schemas.auth import Token, UserRead
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -21,17 +21,8 @@ def _issue_token(user: User) -> Token:
     return Token(access_token=token, user=UserRead.model_validate(user))
 
 
-@router.post(
-    "/register", response_model=Token, status_code=status.HTTP_201_CREATED
-)
-def register(payload: UserRegister, db: Session = Depends(get_db)) -> Token:
-    if crud_user.get_user_by_email(db, payload.email.lower()):
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="A user with this email already exists",
-        )
-    user = crud_user.create_user(db, payload)
-    return _issue_token(user)
+# Note: self-registration is intentionally disabled. Admins create users via
+# POST /api/users. The first admin is created by the seed script.
 
 
 @router.post("/login", response_model=Token)
