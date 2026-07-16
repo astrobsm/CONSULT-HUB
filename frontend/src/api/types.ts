@@ -172,6 +172,7 @@ export interface Appointment {
   status: AppointmentStatus
   queue_position: number | null
   reason: string | null
+  rescheduled_to_id: number | null
   checked_in_at: string | null
   created_at: string
 }

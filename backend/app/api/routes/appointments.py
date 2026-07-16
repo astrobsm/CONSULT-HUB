@@ -19,6 +19,7 @@ from app.schemas.scheduling import (
     AppointmentTransition,
     HoldCreate,
     HoldRead,
+    RescheduleRequest,
 )
 from app.services.notifications import notify_appointment
 from app.services.scheduling import (
@@ -26,6 +27,7 @@ from app.services.scheduling import (
     SlotUnavailable,
     book_appointment,
     create_hold,
+    reschedule_appointment,
 )
 
 router = APIRouter(prefix="/appointments", tags=["appointments"])
@@ -153,6 +155,43 @@ def get_appointment(
 ) -> AppointmentRead:
     appt = _scoped_appointment(appointment_id, db, current_user)
     return crud.to_read(db, appt)
+
+
+@router.post("/{appointment_id}/reschedule", response_model=AppointmentRead)
+def reschedule(
+    appointment_id: int,
+    payload: RescheduleRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> AppointmentRead:
+    appt = _scoped_appointment(appointment_id, db, current_user)
+    clinic = _scoped_clinic(appt.clinic_id, db, current_user)
+    try:
+        new_appt = reschedule_appointment(
+            db,
+            appt,
+            clinic,
+            slot_start=payload.slot_start,
+            station_id=payload.station_id,
+            booked_by_user_id=current_user.id,
+        )
+    except SlotUnavailable as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except SchedulingError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    station = crud.get_station(db, new_appt.station_id)
+    patient = crud_patient.get_patient(db, new_appt.patient_id)
+    notify_appointment(
+        db,
+        institution_id=new_appt.institution_id,
+        assigned_user_id=station.assigned_user_id if station else None,
+        clinic_name=clinic.name,
+        patient_name=patient.full_name if patient else "Patient",
+        slot_start=new_appt.slot_start.strftime("%Y-%m-%d %H:%M"),
+        event="rescheduled",
+    )
+    return crud.to_read(db, new_appt)
 
 
 @router.post("/{appointment_id}/transition", response_model=AppointmentRead)

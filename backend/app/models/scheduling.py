@@ -133,6 +133,10 @@ class Appointment(Base):
     cancellation_reason: Mapped[str | None] = mapped_column(
         String(300), nullable=True
     )
+    # When rescheduled, points to the replacement appointment (history).
+    rescheduled_to_id: Mapped[int | None] = mapped_column(
+        ForeignKey("appointments.id"), nullable=True
+    )
 
     booked_by_user_id: Mapped[int | None] = mapped_column(
         ForeignKey("users.id"), nullable=True

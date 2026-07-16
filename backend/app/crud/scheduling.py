@@ -124,6 +124,7 @@ def to_read(db: Session, appt: Appointment) -> dict:
         "status": appt.status,
         "queue_position": appt.queue_position,
         "reason": appt.reason,
+        "rescheduled_to_id": appt.rescheduled_to_id,
         "checked_in_at": appt.checked_in_at,
         "created_at": appt.created_at,
     }

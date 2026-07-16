@@ -399,6 +399,17 @@ export function transitionAppointment(
   })
 }
 
+export function rescheduleAppointment(
+  id: number,
+  slotStart: string,
+  stationId?: number | null,
+): Promise<Appointment> {
+  return request<Appointment>(`/appointments/${id}/reschedule`, {
+    method: 'POST',
+    body: JSON.stringify({ slot_start: slotStart, station_id: stationId ?? null }),
+  })
+}
+
 export function health(): Promise<{ status: string; service: string }> {
   return request('/health')
 }

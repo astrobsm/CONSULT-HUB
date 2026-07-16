@@ -276,6 +276,50 @@ def book_appointment(
     raise SlotUnavailable("This appointment slot is no longer available.")
 
 
+RESCHEDULABLE = {
+    AppointmentStatus.BOOKED,
+    AppointmentStatus.CONFIRMED,
+    AppointmentStatus.DID_NOT_ATTEND,
+}
+
+
+def reschedule_appointment(
+    db: Session,
+    appt: Appointment,
+    clinic: Clinic,
+    *,
+    slot_start: datetime,
+    station_id: int | None,
+    booked_by_user_id: int | None,
+) -> Appointment:
+    """Book a replacement at the new slot, mark the old one rescheduled.
+
+    The new booking goes through `book_appointment`, so the no-double-book
+    guarantee and load balancing apply. History is preserved via
+    `rescheduled_to_id`.
+    """
+    if appt.status not in RESCHEDULABLE:
+        raise SchedulingError(
+            f"Cannot reschedule an appointment that is '{appt.status.value}'."
+        )
+    new_appt = book_appointment(
+        db,
+        clinic,
+        patient_id=appt.patient_id,
+        slot_start=slot_start,
+        appointment_type=appt.appointment_type,
+        station_id=station_id,
+        reason=appt.reason,
+        consultation_id=appt.consultation_id,
+        booked_by_user_id=booked_by_user_id,
+    )
+    appt.status = AppointmentStatus.RESCHEDULED
+    appt.rescheduled_to_id = new_appt.id
+    db.commit()
+    db.refresh(new_appt)
+    return new_appt
+
+
 def assign_queue_position(db: Session, appt: Appointment) -> int:
     """Position among today's checked-in patients at the same station."""
     lo, hi = _day_bounds(appt.slot_start.date())

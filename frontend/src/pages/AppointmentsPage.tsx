@@ -11,8 +11,10 @@ import {
 import {
   APPOINTMENT_TRANSITIONS,
   APPOINTMENT_TYPES,
+  type Appointment,
   type AppointmentStatus,
 } from '../api/types'
+import RescheduleDialog from '../components/RescheduleDialog'
 
 function todayIso(): string {
   const d = new Date()
@@ -32,6 +34,10 @@ export default function AppointmentsPage() {
   const queryClient = useQueryClient()
   const [date, setDate] = useState(todayIso())
   const [clinicId, setClinicId] = useState<number | ''>('')
+  const [rescheduling, setRescheduling] = useState<Appointment | null>(null)
+
+  const invalidateAppointments = () =>
+    queryClient.invalidateQueries({ queryKey: ['appointments'] })
 
   const clinics = useQuery({ queryKey: ['clinics'], queryFn: listClinics })
   const patients = useQuery({
@@ -126,13 +132,9 @@ export default function AppointmentsPage() {
                   </td>
                   <td>
                     <ApptActions
-                      id={a.id}
-                      status={a.status}
-                      onChange={() =>
-                        queryClient.invalidateQueries({
-                          queryKey: ['appointments'],
-                        })
-                      }
+                      appt={a}
+                      onChange={invalidateAppointments}
+                      onReschedule={() => setRescheduling(a)}
                     />
                   </td>
                 </tr>
@@ -141,30 +143,49 @@ export default function AppointmentsPage() {
           </table>
         )}
       </div>
+
+      {rescheduling && (
+        <RescheduleDialog
+          appointment={rescheduling}
+          onClose={() => setRescheduling(null)}
+          onDone={() => {
+            setRescheduling(null)
+            invalidateAppointments()
+          }}
+        />
+      )}
     </section>
   )
 }
 
+const RESCHEDULABLE: AppointmentStatus[] = [
+  'booked',
+  'confirmed',
+  'did_not_attend',
+]
+
 function ApptActions({
-  id,
-  status,
+  appt,
   onChange,
+  onReschedule,
 }: {
-  id: number
-  status: AppointmentStatus
+  appt: Appointment
   onChange: () => void
+  onReschedule: () => void
 }) {
-  const next = APPOINTMENT_TRANSITIONS[status]
+  const next = APPOINTMENT_TRANSITIONS[appt.status]
   const mut = useMutation({
     mutationFn: (to: AppointmentStatus) =>
       transitionAppointment(
-        id,
+        appt.id,
         to,
         to === 'cancelled' ? 'Cancelled by staff' : undefined,
       ),
     onSuccess: onChange,
   })
-  if (next.length === 0) return <span className="muted small">—</span>
+  const canReschedule = RESCHEDULABLE.includes(appt.status)
+  if (next.length === 0 && !canReschedule)
+    return <span className="muted small">—</span>
   return (
     <div className="appt-actions">
       {next.map((s) => (
@@ -177,6 +198,11 @@ function ApptActions({
           {s.replace(/_/g, ' ')}
         </button>
       ))}
+      {canReschedule && (
+        <button className="btn btn--sm" onClick={onReschedule}>
+          reschedule
+        </button>
+      )}
     </div>
   )
 }

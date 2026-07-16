@@ -532,6 +532,34 @@ a.tile:hover { border-color: var(--primary); text-decoration: none; }
   white-space: nowrap;
 }
 
+/* Modal */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 4rem 1rem;
+  z-index: 100;
+}
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 460px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+}
+.modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+.modal__head h2 { margin: 0; }
+
 /* Appointments & clinics */
 .daypick { display: flex; gap: 0.35rem; flex-wrap: wrap; }
 .daypick__day {

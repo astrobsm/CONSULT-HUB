@@ -158,6 +158,7 @@ class AppointmentRead(BaseModel):
     status: AppointmentStatus
     queue_position: int | None
     reason: str | None
+    rescheduled_to_id: int | None
     checked_in_at: datetime | None
     created_at: datetime
 
@@ -165,3 +166,8 @@ class AppointmentRead(BaseModel):
 class AppointmentTransition(BaseModel):
     to_status: AppointmentStatus
     cancellation_reason: str | None = None
+
+
+class RescheduleRequest(BaseModel):
+    slot_start: datetime
+    station_id: int | None = None
