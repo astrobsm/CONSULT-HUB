@@ -483,7 +483,14 @@ a.tile:hover { border-color: var(--primary); text-decoration: none; }
   line-height: 1.2;
   font-size: 0.85rem;
   font-weight: 600;
+  color: var(--text);
 }
+.user-menu__name:hover { text-decoration: none; color: var(--primary); }
+.success-msg { color: #166534; }
+@media (prefers-color-scheme: dark) {
+  .success-msg { color: #4ade80; }
+}
+.account-readonly { display: flex; gap: 1.5rem; }
 .user-menu__role {
   font-weight: 400;
   font-size: 0.72rem;

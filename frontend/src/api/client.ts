@@ -328,6 +328,26 @@ export function fetchMe(): Promise<AuthUser> {
   return request<AuthUser>('/auth/me')
 }
 
+export function updateProfile(payload: {
+  full_name?: string
+  designation?: string | null
+}): Promise<AuthUser> {
+  return request<AuthUser>('/auth/me', {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function changePassword(payload: {
+  current_password: string
+  new_password: string
+}): Promise<void> {
+  return request<void>('/auth/change-password', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
 export function logout() {
   setToken(null)
 }

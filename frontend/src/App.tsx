@@ -6,6 +6,7 @@ import { isAdminRole } from './api/client'
 import NotificationBell from './components/NotificationBell'
 import AdminUsersPage from './pages/AdminUsersPage'
 import AdminDepartmentsPage from './pages/AdminDepartmentsPage'
+import AccountPage from './pages/AccountPage'
 import DashboardPage from './pages/DashboardPage'
 import ConsultationsListPage from './pages/ConsultationsListPage'
 import ConsultationCreatePage from './pages/ConsultationCreatePage'
@@ -38,10 +39,10 @@ function Header() {
         {user && (
           <div className="user-menu">
             <NotificationBell />
-            <span className="user-menu__name">
+            <Link to="/account" className="user-menu__name">
               {user.full_name}
               <span className="user-menu__role">{user.role}</span>
-            </span>
+            </Link>
             <button className="btn" onClick={logout}>
               Sign out
             </button>
@@ -134,6 +135,14 @@ export default function App() {
               <RequireAdmin>
                 <AdminDepartmentsPage />
               </RequireAdmin>
+            }
+          />
+          <Route
+            path="/account"
+            element={
+              <RequireAuth>
+                <AccountPage />
+              </RequireAuth>
             }
           />
         </Routes>
