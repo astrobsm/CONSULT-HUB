@@ -8,6 +8,7 @@ pyjwt>=2.8
 python-multipart>=0.0.9
 apscheduler>=3.10,<4
 websockets>=12
+alembic>=1.13
 
 # Dev / test
 pytest>=8.0

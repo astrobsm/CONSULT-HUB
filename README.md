@@ -35,8 +35,20 @@ uvicorn app.main:app --reload
 `consultant@…`.
 
 Dev uses SQLite (`consulthub.db`) out of the box. Set `DATABASE_URL` in `backend/.env`
-to point at PostgreSQL for production. Tables are auto-created on startup; wire up
-Alembic migrations before production.
+to point at PostgreSQL for production.
+
+**Schema management:**
+- **Dev/tests** auto-create tables on startup (`create_all`) — zero setup.
+- **Production** uses Alembic migrations (authoritative). `env.py` reads
+  `settings.database_url` and the app's metadata:
+  ```bash
+  cd backend
+  alembic upgrade head            # apply migrations to the configured DB
+  alembic revision --autogenerate -m "describe change"   # after model changes
+  ```
+  SQLite runs migrations in batch mode; the same migrations apply to PostgreSQL.
+  The initial migration includes the appointments partial-unique index that
+  enforces no double-booking.
 
 ### Auth & multi-tenancy
 
