@@ -1,6 +1,7 @@
 import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { useAuth } from './auth/AuthContext'
 import RequireAuth from './auth/RequireAuth'
+import NotificationBell from './components/NotificationBell'
 import DashboardPage from './pages/DashboardPage'
 import ConsultationsListPage from './pages/ConsultationsListPage'
 import ConsultationCreatePage from './pages/ConsultationCreatePage'
@@ -31,6 +32,7 @@ function Header() {
         </Link>
         {user && (
           <div className="user-menu">
+            <NotificationBell />
             <span className="user-menu__name">
               {user.full_name}
               <span className="user-menu__role">{user.role}</span>

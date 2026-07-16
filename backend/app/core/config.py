@@ -23,6 +23,14 @@ class Settings(BaseSettings):
     escalation_enabled: bool = True
     escalation_interval_seconds: int = 60
 
+    # Email. If smtp_host is unset, emails are logged (console transport).
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_user: str | None = None
+    smtp_password: str | None = None
+    smtp_from: str = "ConsultHUB <no-reply@consulthub.local>"
+    smtp_tls: bool = True
+
     # Comma-separated origins allowed by CORS.
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
 

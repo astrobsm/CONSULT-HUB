@@ -11,6 +11,7 @@ from app.crud.consultation import InvalidTransition
 from app.models.consultation import Consultation
 from app.models.entities import User
 from app.models.enums import ConsultationStatus
+from app.services.notifications import notify_status_change
 from app.schemas.consultation import (
     ConsultationCreate,
     ConsultationRead,
@@ -101,7 +102,7 @@ def transition_consultation(
 ) -> ConsultationRead:
     consultation = _get_scoped(consultation_id, db, current_user)
     try:
-        return crud.transition_consultation(
+        updated = crud.transition_consultation(
             db,
             consultation,
             to_status=payload.to_status,
@@ -110,3 +111,11 @@ def transition_consultation(
         )
     except InvalidTransition as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+    notify_status_change(
+        db,
+        updated,
+        to_status=payload.to_status,
+        actor_user_id=current_user.id,
+    )
+    return updated

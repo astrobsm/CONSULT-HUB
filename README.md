@@ -93,6 +93,24 @@ Alembic migrations before production.
   workers, move the job to a single scheduler process or Celery Beat + Redis (per
   the spec) so escalations don't run N times.
 
+### Notifications
+
+- In-app notifications persisted per user: `GET /api/notifications`
+  (`?unread_only=`), `GET /api/notifications/unread-count`,
+  `POST /api/notifications/{id}/read`, `POST /api/notifications/read-all`.
+- Emitted by domain events via `app/services/notifications.py`:
+  - **Escalation** → notifies the requester at every level, plus senior roles
+    (consultant / admins as HOD / Medical Director proxies) from level 3.
+  - **Status change** → in-app notifies the requester when their consult is
+    acknowledged / accepted / seen / completed / rejected / returned (never the
+    actor themselves).
+- **Email transport** (`app/core/email.py`): sends via SMTP when `SMTP_HOST` is
+  configured, otherwise logs to the console — best-effort, never breaks a request
+  or escalation run. Escalations send email; status changes are in-app only for
+  now (queue them before enabling high-volume email).
+- UI: a header bell with a live unread badge (polls every 20s) and a dropdown that
+  lists notifications, marks them read, and deep-links to the consultation.
+
 ## Frontend — quick start
 
 ```bash

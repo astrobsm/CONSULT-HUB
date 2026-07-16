@@ -1,4 +1,5 @@
 import type {
+  AppNotification,
   Consultation,
   ConsultationCreate,
   ConsultationStatus,
@@ -108,6 +109,31 @@ export function createPatient(payload: PatientCreate): Promise<Patient> {
 
 export function getDashboardSummary(): Promise<DashboardSummary> {
   return request<DashboardSummary>('/dashboard/summary')
+}
+
+// ---- Notifications ----
+
+export function listNotifications(
+  unreadOnly = false,
+): Promise<AppNotification[]> {
+  const qs = unreadOnly ? '?unread_only=true' : ''
+  return request<AppNotification[]>(`/notifications${qs}`)
+}
+
+export function getUnreadCount(): Promise<{ unread: number }> {
+  return request<{ unread: number }>('/notifications/unread-count')
+}
+
+export function markNotificationRead(id: number): Promise<AppNotification> {
+  return request<AppNotification>(`/notifications/${id}/read`, {
+    method: 'POST',
+  })
+}
+
+export function markAllNotificationsRead(): Promise<{ unread: number }> {
+  return request<{ unread: number }>('/notifications/read-all', {
+    method: 'POST',
+  })
 }
 
 export function health(): Promise<{ status: string; service: string }> {

@@ -10,6 +10,7 @@ from app.api.routes import (
     consultations,
     dashboard,
     escalation,
+    notifications,
     patients,
 )
 from app.core.config import settings
@@ -72,3 +73,4 @@ app.include_router(patients.router, prefix=settings.api_prefix)
 app.include_router(consultations.router, prefix=settings.api_prefix)
 app.include_router(dashboard.router, prefix=settings.api_prefix)
 app.include_router(escalation.router, prefix=settings.api_prefix)
+app.include_router(notifications.router, prefix=settings.api_prefix)

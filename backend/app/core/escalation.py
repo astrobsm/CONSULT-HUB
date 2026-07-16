@@ -51,8 +51,15 @@ def _as_utc(dt: datetime) -> datetime:
     return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
 
 
-def _notify(consultation: Consultation, step: EscalationStep) -> None:
-    """Stub notification sink. Replace with a real transport."""
+def _fire(
+    db: Session,
+    consultation: Consultation,
+    step: EscalationStep,
+    now: datetime,
+) -> None:
+    # Imported here to avoid a circular import at module load.
+    from app.services.notifications import notify_escalation
+
     logger.warning(
         "ESCALATION consult#%s L%s '%s' -> notify %s",
         consultation.id,
@@ -60,14 +67,6 @@ def _notify(consultation: Consultation, step: EscalationStep) -> None:
         step.label,
         step.notify_role,
     )
-
-
-def _fire(
-    db: Session,
-    consultation: Consultation,
-    step: EscalationStep,
-    now: datetime,
-) -> None:
     db.add(
         EscalationEvent(
             consultation_id=consultation.id,
@@ -88,7 +87,14 @@ def _fire(
         )
     )
     consultation.escalation_level = step.level
-    _notify(consultation, step)
+    notify_escalation(
+        db,
+        consultation,
+        level=step.level,
+        label=step.label,
+        threshold_minutes=step.minutes,
+        notify_role=step.notify_role,
+    )
 
 
 def run_escalations(

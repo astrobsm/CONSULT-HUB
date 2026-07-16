@@ -92,6 +92,16 @@ export interface Patient {
   created_at: string
 }
 
+export interface AppNotification {
+  id: number
+  consultation_id: number | null
+  kind: string
+  title: string
+  body: string
+  is_read: boolean
+  created_at: string
+}
+
 export interface DashboardSummary {
   total: number
   pending: number
