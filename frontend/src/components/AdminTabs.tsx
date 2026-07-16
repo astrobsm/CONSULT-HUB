@@ -19,6 +19,14 @@ export default function AdminTabs() {
       >
         Departments
       </NavLink>
+      <NavLink
+        to="/admin/clinics"
+        className={({ isActive }) =>
+          `admin-tab ${isActive ? 'admin-tab--active' : ''}`
+        }
+      >
+        Clinics
+      </NavLink>
     </nav>
   )
 }

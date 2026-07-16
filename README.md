@@ -50,6 +50,35 @@ Alembic migrations before production.
 - `secret_key` MUST be overridden via env in any real deployment. Password hashing
   is PBKDF2-HMAC-SHA256 (stdlib); swap for argon2/bcrypt before production.
 
+### Outpatient appointments (clinic scheduling)
+
+A distinct module from the inpatient consult workflow — see
+[docs/clinic-appointment-module.md](docs/clinic-appointment-module.md). An
+appointment may link a consultation (`consultation_id`), but booking/slotting is
+separate.
+
+- **Clinics & stations** (admin): each clinic has operating days/hours, breaks,
+  slot duration and a load-balancing mode; each clinic has unlimited consultation
+  stations (typed, with room + assigned clinician + active/inactive/maintenance).
+- **Slots** are generated per station from the clinic's hours/duration, skipping
+  breaks and non-operating weekdays. `GET /clinics/{id}/availability?date=` returns
+  free slots per station (minus booked + held).
+- **No double-booking (guaranteed at the DB):** a partial unique index on
+  (station, slot) over active statuses — a duplicate is impossible, not merely
+  checked. A conflicting booking gets 409 "This appointment slot is no longer
+  available."
+- **Load balancing:** booking without a station auto-assigns the least-busy free
+  station (round-robin configurable), keeping counts within one across stations.
+- **Slot holds:** `POST /appointments/hold` reserves a slot for a few minutes
+  (`APPOINTMENT_HOLD_MINUTES`) while a booking completes; held slots drop out of
+  availability and expire automatically.
+- **Lifecycle:** `POST /appointments/{id}/transition` walks booked → confirmed →
+  checked-in (assigns a queue position) → called → in-progress → completed, plus
+  did-not-attend / cancelled / rescheduled (a cancel frees the slot for rebooking).
+- UI: an **Appointments** page (book: patient → clinic → date → type → pick a time;
+  and a filterable clinic list/queue with lifecycle actions), plus a **Clinics** tab
+  in Admin to manage clinics and stations.
+
 ### Administration & RBAC
 
 - **Self-registration is disabled.** Admins create users via `POST /api/users`;

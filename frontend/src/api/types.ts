@@ -92,6 +92,107 @@ export interface Patient {
   created_at: string
 }
 
+export const APPOINTMENT_TYPES = [
+  'new_patient', 'review', 'follow_up', 'postoperative', 'procedure',
+  'telemedicine', 'emergency', 'walk_in', 'priority', 'vip', 'staff',
+  'insurance', 'private',
+] as const
+export type AppointmentType = (typeof APPOINTMENT_TYPES)[number]
+
+export type AppointmentStatus =
+  | 'booked' | 'confirmed' | 'checked_in' | 'waiting' | 'called'
+  | 'in_progress' | 'completed' | 'did_not_attend' | 'cancelled'
+  | 'rescheduled' | 'referred' | 'admitted' | 'discharged'
+
+export const STATION_TYPES = [
+  'consultant', 'registrar', 'medical_officer', 'resident',
+  'nurse_practitioner', 'dietician', 'physiotherapy', 'psychology',
+  'occupational_therapy', 'social_welfare', 'telemedicine', 'procedure',
+  'review', 'emergency_walk_in',
+] as const
+export type StationType = (typeof STATION_TYPES)[number]
+
+export interface Clinic {
+  id: number
+  institution_id: number | null
+  department_id: number | null
+  name: string
+  subspecialty: string | null
+  location: string | null
+  operating_days: string
+  open_time: string
+  close_time: string
+  break_start: string | null
+  break_end: string | null
+  slot_duration_minutes: number
+  load_balancing: 'least_busy' | 'round_robin'
+  is_active: boolean
+  created_at: string
+}
+
+export interface Station {
+  id: number
+  clinic_id: number
+  station_number: number
+  name: string
+  station_type: StationType
+  room_number: string | null
+  assigned_user_id: number | null
+  max_patients: number | null
+  status: 'active' | 'inactive' | 'maintenance'
+}
+
+export interface StationAvailability {
+  station_id: number
+  station_name: string
+  booked_count: number
+  free_slots: string[]
+}
+
+export interface Availability {
+  clinic_id: number
+  date: string
+  slot_duration_minutes: number
+  stations: StationAvailability[]
+}
+
+export interface Appointment {
+  id: number
+  appointment_number: string | null
+  clinic_id: number
+  clinic_name: string | null
+  station_id: number
+  station_name: string | null
+  patient_id: number
+  patient_name: string | null
+  consultation_id: number | null
+  appointment_type: AppointmentType
+  slot_start: string
+  duration_minutes: number
+  status: AppointmentStatus
+  queue_position: number | null
+  reason: string | null
+  checked_in_at: string | null
+  created_at: string
+}
+
+/** Forward transitions allowed per appointment status (mirrors backend). */
+export const APPOINTMENT_TRANSITIONS: Record<AppointmentStatus, AppointmentStatus[]> = {
+  booked: ['confirmed', 'checked_in', 'cancelled', 'rescheduled', 'did_not_attend'],
+  confirmed: ['checked_in', 'cancelled', 'rescheduled', 'did_not_attend'],
+  checked_in: ['waiting', 'called', 'cancelled'],
+  waiting: ['called', 'cancelled'],
+  called: ['in_progress', 'did_not_attend', 'waiting'],
+  in_progress: ['completed', 'referred', 'admitted', 'discharged'],
+  completed: [],
+  did_not_attend: ['rescheduled'],
+  cancelled: [],
+  rescheduled: [],
+  referred: [],
+  admitted: [],
+  discharged: [],
+}
+
 export interface ConsultationMessage {
   id: number
   consultation_id: number

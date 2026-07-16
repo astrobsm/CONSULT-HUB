@@ -1,6 +1,11 @@
 import type {
+  Appointment,
+  AppointmentStatus,
+  AppointmentType,
   AppNotification,
   Attachment,
+  Availability,
+  Clinic,
   Consultation,
   ConsultationCreate,
   ConsultationMessage,
@@ -8,6 +13,7 @@ import type {
   DashboardSummary,
   Patient,
   PatientCreate,
+  Station,
 } from './types'
 
 const BASE = '/api'
@@ -297,6 +303,100 @@ export function postMessage(
 
 export function getFhirEverything(patientId: number): Promise<unknown> {
   return request<unknown>(`/fhir/Patient/${patientId}/$everything`)
+}
+
+// ---- Clinics & stations ----
+
+export function listClinics(): Promise<Clinic[]> {
+  return request<Clinic[]>('/clinics')
+}
+export function createClinic(payload: Partial<Clinic>): Promise<Clinic> {
+  return request<Clinic>('/clinics', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+export function updateClinic(
+  id: number,
+  payload: Partial<Clinic>,
+): Promise<Clinic> {
+  return request<Clinic>(`/clinics/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+export function listStations(clinicId: number): Promise<Station[]> {
+  return request<Station[]>(`/clinics/${clinicId}/stations`)
+}
+export function createStation(
+  clinicId: number,
+  payload: Partial<Station>,
+): Promise<Station> {
+  return request<Station>(`/clinics/${clinicId}/stations`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+export function updateStation(
+  stationId: number,
+  payload: Partial<Station>,
+): Promise<Station> {
+  return request<Station>(`/stations/${stationId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+export function getAvailability(
+  clinicId: number,
+  date: string,
+): Promise<Availability> {
+  return request<Availability>(`/clinics/${clinicId}/availability?date=${date}`)
+}
+
+// ---- Appointments ----
+
+export interface BookInput {
+  clinic_id: number
+  patient_id: number
+  slot_start: string
+  appointment_type: AppointmentType
+  station_id?: number | null
+  reason?: string | null
+  consultation_id?: number | null
+}
+
+export function bookAppointment(payload: BookInput): Promise<Appointment> {
+  return request<Appointment>('/appointments', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+export function listAppointments(params?: {
+  clinicId?: number
+  date?: string
+  status?: AppointmentStatus
+  patientId?: number
+}): Promise<Appointment[]> {
+  const q = new URLSearchParams()
+  if (params?.clinicId != null) q.set('clinic_id', String(params.clinicId))
+  if (params?.date) q.set('date', params.date)
+  if (params?.status) q.set('status', params.status)
+  if (params?.patientId != null) q.set('patient_id', String(params.patientId))
+  const qs = q.toString()
+  return request<Appointment[]>(`/appointments${qs ? `?${qs}` : ''}`)
+}
+export function transitionAppointment(
+  id: number,
+  toStatus: AppointmentStatus,
+  cancellationReason?: string,
+): Promise<Appointment> {
+  return request<Appointment>(`/appointments/${id}/transition`, {
+    method: 'POST',
+    body: JSON.stringify({
+      to_status: toStatus,
+      cancellation_reason: cancellationReason ?? null,
+    }),
+  })
 }
 
 export function health(): Promise<{ status: string; service: string }> {

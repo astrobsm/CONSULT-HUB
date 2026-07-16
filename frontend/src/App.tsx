@@ -7,6 +7,8 @@ import NotificationBell from './components/NotificationBell'
 import RealtimeBridge from './realtime/RealtimeBridge'
 import AdminUsersPage from './pages/AdminUsersPage'
 import AdminDepartmentsPage from './pages/AdminDepartmentsPage'
+import AdminClinicsPage from './pages/AdminClinicsPage'
+import AppointmentsPage from './pages/AppointmentsPage'
 import AccountPage from './pages/AccountPage'
 import DashboardPage from './pages/DashboardPage'
 import ConsultationsListPage from './pages/ConsultationsListPage'
@@ -32,6 +34,7 @@ function Header() {
       <nav className="app__nav">
         <Link to="/dashboard">Dashboard</Link>
         <Link to="/consultations">Consultations</Link>
+        <Link to="/appointments">Appointments</Link>
         <Link to="/patients">Patients</Link>
         {isAdminRole(user?.role) && <Link to="/admin/users">Admin</Link>}
         <Link to="/consultations/new" className="btn btn--primary">
@@ -137,6 +140,22 @@ export default function App() {
               <RequireAdmin>
                 <AdminDepartmentsPage />
               </RequireAdmin>
+            }
+          />
+          <Route
+            path="/admin/clinics"
+            element={
+              <RequireAdmin>
+                <AdminClinicsPage />
+              </RequireAdmin>
+            }
+          />
+          <Route
+            path="/appointments"
+            element={
+              <RequireAuth>
+                <AppointmentsPage />
+              </RequireAuth>
             }
           />
           <Route
