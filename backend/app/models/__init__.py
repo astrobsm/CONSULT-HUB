@@ -7,6 +7,12 @@ from app.models.attachment import Attachment
 from app.models.entities import Department, Institution, Patient, User
 from app.models.message import ConsultationMessage
 from app.models.notification import Notification
+from app.models.scheduling import (
+    Appointment,
+    Clinic,
+    ConsultationStation,
+    SlotHold,
+)
 
 __all__ = [
     "Institution",
@@ -19,4 +25,8 @@ __all__ = [
     "Notification",
     "Attachment",
     "ConsultationMessage",
+    "Clinic",
+    "ConsultationStation",
+    "Appointment",
+    "SlotHold",
 ]

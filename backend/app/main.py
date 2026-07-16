@@ -8,8 +8,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.websockets import WebSocketDisconnect
 
 from app.api.routes import (
+    appointments,
     attachments,
     auth,
+    clinics,
     consultations,
     dashboard,
     escalation,
@@ -124,3 +126,5 @@ app.include_router(org.router, prefix=settings.api_prefix)
 app.include_router(attachments.router, prefix=settings.api_prefix)
 app.include_router(messages.router, prefix=settings.api_prefix)
 app.include_router(fhir.router, prefix=settings.api_prefix)
+app.include_router(clinics.router, prefix=settings.api_prefix)
+app.include_router(appointments.router, prefix=settings.api_prefix)

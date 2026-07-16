@@ -35,6 +35,9 @@ class Settings(BaseSettings):
     storage_dir: str = "./uploads"
     max_upload_mb: int = 15
 
+    # Appointment slot hold (temporary lock) duration, minutes.
+    appointment_hold_minutes: int = 3
+
     # Comma-separated origins allowed by CORS.
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
 

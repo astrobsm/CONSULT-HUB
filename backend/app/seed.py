@@ -114,6 +114,7 @@ def seed() -> None:
             )
 
         _seed_patients(db, institution.id)
+        _seed_clinic(db, institution.id)
 
         db.commit()
         print(
@@ -122,6 +123,63 @@ def seed() -> None:
         )
     finally:
         db.close()
+
+
+def _seed_clinic(db, institution_id: int) -> None:
+    from app.models.scheduling import Clinic, ConsultationStation
+    from app.models.scheduling_enums import StationType
+
+    existing = db.scalar(
+        select(Clinic).where(
+            Clinic.institution_id == institution_id,
+            Clinic.name == "Burn Clinic",
+        )
+    )
+    if existing:
+        print("Clinic 'Burn Clinic' already exists.")
+        return
+
+    clinic = Clinic(
+        institution_id=institution_id,
+        name="Burn Clinic",
+        subspecialty="Plastic & Reconstructive Surgery",
+        location="Outpatient Block, Level 2",
+        operating_days="0,1,2,3,4",
+        open_time="08:00",
+        close_time="13:00",
+        slot_duration_minutes=20,
+    )
+    db.add(clinic)
+    db.flush()
+    db.add_all(
+        [
+            ConsultationStation(
+                clinic_id=clinic.id,
+                institution_id=institution_id,
+                station_number=1,
+                name="Station 1 — Consultant A",
+                station_type=StationType.CONSULTANT,
+                room_number="201",
+            ),
+            ConsultationStation(
+                clinic_id=clinic.id,
+                institution_id=institution_id,
+                station_number=2,
+                name="Station 2 — Consultant B",
+                station_type=StationType.CONSULTANT,
+                room_number="202",
+            ),
+            ConsultationStation(
+                clinic_id=clinic.id,
+                institution_id=institution_id,
+                station_number=3,
+                name="Station 3 — Registrar",
+                station_type=StationType.REGISTRAR,
+                room_number="203",
+            ),
+        ]
+    )
+    print("Created clinic 'Burn Clinic' with 3 stations.")
 
 
 DEMO_PATIENTS = [

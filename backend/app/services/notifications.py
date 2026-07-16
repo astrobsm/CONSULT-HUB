@@ -120,6 +120,34 @@ def notify_new_message(
     )
 
 
+def notify_appointment(
+    db: Session,
+    *,
+    institution_id: int | None,
+    assigned_user_id: int | None,
+    clinic_name: str,
+    patient_name: str,
+    slot_start: str,
+    event: str,
+) -> None:
+    """Notify a station's assigned clinician about an appointment change."""
+    if not assigned_user_id:
+        return
+    verb = {
+        "booked": "booked",
+        "cancelled": "cancelled",
+        "rescheduled": "rescheduled",
+    }.get(event, event)
+    crud.create_notification(
+        db,
+        user_id=assigned_user_id,
+        institution_id=institution_id,
+        kind="appointment",
+        title=f"Appointment {verb}: {clinic_name}",
+        body=f"{patient_name} — {clinic_name} at {slot_start} ({verb}).",
+    )
+
+
 # Status changes worth telling the requester about.
 _NOTIFY_STATUSES = {
     ConsultationStatus.ACKNOWLEDGED,
