@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   createUser,
+  inviteUser,
   listDepartments,
   listRoles,
   listUsers,
@@ -25,6 +26,7 @@ export default function AdminUsersPage() {
   const queryClient = useQueryClient()
   const [form, setForm] = useState<CreateUserInput>(EMPTY)
   const [showForm, setShowForm] = useState(false)
+  const [invite, setInvite] = useState(false)
 
   const users = useQuery({ queryKey: ['users'], queryFn: listUsers })
   const roles = useQuery({ queryKey: ['roles'], queryFn: listRoles })
@@ -34,7 +36,16 @@ export default function AdminUsersPage() {
     queryClient.invalidateQueries({ queryKey: ['users'] })
 
   const create = useMutation({
-    mutationFn: (p: CreateUserInput) => createUser(p),
+    mutationFn: (p: CreateUserInput) =>
+      invite
+        ? inviteUser({
+            full_name: p.full_name,
+            email: p.email,
+            role: p.role,
+            designation: p.designation ?? null,
+            department_id: p.department_id ?? null,
+          })
+        : createUser(p),
     onSuccess: () => {
       invalidate()
       setForm(EMPTY)
@@ -90,17 +101,32 @@ export default function AdminUsersPage() {
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
               />
             </label>
-            <label className="field">
-              <span>Password * (min 8)</span>
-              <input
-                required
-                type="password"
-                minLength={8}
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-              />
-            </label>
+            {!invite && (
+              <label className="field">
+                <span>Password * (min 8)</span>
+                <input
+                  required={!invite}
+                  type="password"
+                  minLength={8}
+                  value={form.password}
+                  onChange={(e) =>
+                    setForm({ ...form, password: e.target.value })
+                  }
+                />
+              </label>
+            )}
           </div>
+
+          <label className="check-inline">
+            <input
+              type="checkbox"
+              checked={invite}
+              onChange={(e) => setInvite(e.target.checked)}
+            />
+            <span>
+              Send email invite instead — the user sets their own password
+            </span>
+          </label>
           <div className="grid">
             <label className="field">
               <span>Role</span>
@@ -147,7 +173,11 @@ export default function AdminUsersPage() {
           )}
           <div className="form-actions">
             <button className="btn btn--primary" disabled={create.isPending}>
-              {create.isPending ? 'Creating…' : 'Create user'}
+              {create.isPending
+                ? 'Saving…'
+                : invite
+                  ? 'Send invite'
+                  : 'Create user'}
             </button>
           </div>
         </form>

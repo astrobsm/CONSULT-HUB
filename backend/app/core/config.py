@@ -21,6 +21,11 @@ class Settings(BaseSettings):
     # PBKDF2 work factor. Lowered only in tests for speed.
     pbkdf2_iterations: int = 200_000
 
+    # Password-reset / invite tokens, and the base URL used in emailed links.
+    reset_token_expire_minutes: int = 60
+    invite_token_expire_minutes: int = 60 * 24 * 7  # 7 days
+    frontend_base_url: str = "http://localhost:5173"
+
     # Escalation engine. Disable in tests; the interval drives the scheduler.
     escalation_enabled: bool = True
     escalation_interval_seconds: int = 60

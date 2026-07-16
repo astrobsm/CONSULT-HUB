@@ -178,6 +178,21 @@ export function createUser(payload: CreateUserInput): Promise<AuthUser> {
   })
 }
 
+export interface InviteUserInput {
+  full_name: string
+  email: string
+  role: string
+  designation?: string | null
+  department_id?: number | null
+}
+
+export function inviteUser(payload: InviteUserInput): Promise<AuthUser> {
+  return request<AuthUser>('/users/invite', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
 export function updateUser(
   id: number,
   payload: UpdateUserInput,
@@ -483,6 +498,25 @@ export function changePassword(payload: {
   return request<void>('/auth/change-password', {
     method: 'POST',
     body: JSON.stringify(payload),
+  })
+}
+
+export function requestPasswordReset(
+  email: string,
+): Promise<{ status: string }> {
+  return request('/auth/password-reset/request', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  })
+}
+
+export function confirmPasswordSet(
+  token: string,
+  newPassword: string,
+): Promise<void> {
+  return request<void>('/auth/password-reset/confirm', {
+    method: 'POST',
+    body: JSON.stringify({ token, new_password: newPassword }),
   })
 }
 

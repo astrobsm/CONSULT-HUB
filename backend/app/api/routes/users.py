@@ -3,13 +3,18 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
+import secrets
+
 from app.api.deps import get_current_user, require_admin
+from app.core.config import settings
 from app.core.database import get_db
+from app.core.email import send_email
 from app.core.roles import ALL_ROLES, SUPER_ADMIN
+from app.core.security import create_purpose_token
 from app.crud import user as crud
 from app.models.entities import User
 from app.schemas.auth import UserRead
-from app.schemas.user import UserCreate, UserUpdate
+from app.schemas.user import UserCreate, UserInvite, UserUpdate
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -69,6 +74,52 @@ def create_user(
         else admin.institution_id
     )
     return crud.create_user(db, payload, institution_id=institution_id)
+
+
+@router.post(
+    "/invite", response_model=UserRead, status_code=status.HTTP_201_CREATED
+)
+def invite_user(
+    payload: UserInvite,
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
+) -> UserRead:
+    if crud.get_user_by_email(db, payload.email.lower()):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A user with this email already exists",
+        )
+    _guard_role_assignment(admin, payload.role)
+    institution_id = (
+        payload.institution_id
+        if admin.role == SUPER_ADMIN
+        else admin.institution_id
+    )
+    # Create with an unguessable placeholder password; the invitee sets a real
+    # one via the emailed link.
+    user = crud.create_user(
+        db,
+        UserCreate(
+            full_name=payload.full_name,
+            email=payload.email,
+            password=secrets.token_urlsafe(24),
+            role=payload.role,
+            designation=payload.designation,
+            department_id=payload.department_id,
+        ),
+        institution_id=institution_id,
+    )
+    token = create_purpose_token(
+        user.id, "invite", settings.invite_token_expire_minutes
+    )
+    link = f"{settings.frontend_base_url}/set-password?token={token}"
+    send_email(
+        user.email,
+        "You're invited to ConsultHUB",
+        f"An administrator invited you to ConsultHUB. Set your password to "
+        f"get started:\n\n{link}",
+    )
+    return user
 
 
 @router.get("/{user_id}", response_model=UserRead)

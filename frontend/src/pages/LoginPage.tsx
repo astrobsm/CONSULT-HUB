@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 
 export default function LoginPage() {
@@ -69,6 +69,9 @@ export default function LoginPage() {
           </button>
         </form>
 
+        <p className="login__forgot">
+          <Link to="/forgot-password">Forgot password?</Link>
+        </p>
         <p className="muted small login__hint">
           Demo: admin@consulthub.local / consulthub
         </p>

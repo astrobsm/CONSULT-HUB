@@ -391,6 +391,15 @@ a.tile:hover { border-color: var(--primary); text-decoration: none; }
   padding-top: 1rem;
   border-top: 1px solid var(--border);
 }
+.login__forgot { text-align: center; margin-top: 0.75rem; font-size: 0.85rem; }
+.check-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.check-inline input { width: auto; }
 
 .user-menu { display: flex; align-items: center; gap: 0.75rem; }
 

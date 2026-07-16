@@ -60,3 +60,29 @@ def decode_access_token(token: str) -> dict[str, Any]:
     return jwt.decode(
         token, settings.secret_key, algorithms=[settings.jwt_algorithm]
     )
+
+
+def create_purpose_token(
+    subject: str | int, purpose: str, minutes: int
+) -> str:
+    """A short-lived, single-purpose token (password reset / invite)."""
+    now = datetime.now(timezone.utc)
+    payload = {
+        "sub": str(subject),
+        "purpose": purpose,
+        "iat": now,
+        "exp": now + timedelta(minutes=minutes),
+    }
+    return jwt.encode(
+        payload, settings.secret_key, algorithm=settings.jwt_algorithm
+    )
+
+
+def decode_purpose_token(token: str, allowed_purposes: set[str]) -> int:
+    """Return the subject id if the token is valid and its purpose is allowed."""
+    payload = jwt.decode(
+        token, settings.secret_key, algorithms=[settings.jwt_algorithm]
+    )
+    if payload.get("purpose") not in allowed_purposes:
+        raise jwt.InvalidTokenError("Unexpected token purpose")
+    return int(payload["sub"])

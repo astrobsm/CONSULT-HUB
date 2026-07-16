@@ -23,8 +23,10 @@ def send_email(to: str, subject: str, body: str) -> bool:
         return False
 
     if not settings.smtp_host:
-        logger.info(
-            "EMAIL (console) to=%s | %s\n%s", to, subject, body
+        # No SMTP configured (dev): surface the message at WARNING so links
+        # (password reset / invite) are visible in the console.
+        logger.warning(
+            "EMAIL (console, no SMTP) to=%s | %s\n%s", to, subject, body
         )
         return True
 

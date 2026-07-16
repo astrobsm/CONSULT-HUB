@@ -241,6 +241,29 @@ separate.
   new one. UI: an Account page (linked from the header name) with profile and
   change-password forms.
 
+### Password reset & email invites
+
+- **Forgot password:** `POST /api/auth/password-reset/request` always returns 202
+  (no account enumeration); if the email is a known active user, a short-lived
+  reset token is emailed as a `/set-password?token=…` link.
+- **Set password:** `POST /api/auth/password-reset/confirm` validates the token
+  (purpose-checked: an access token can't be used as a reset) and sets the new
+  password; also used to accept invites.
+- **Admin invites:** `POST /api/users/invite` (admin) creates a user with an
+  unusable placeholder password and emails a set-password link (7-day token). The
+  invitee can't log in until they set a password.
+- **Dev:** with no SMTP configured, emails (including the reset/invite link) are
+  logged to the backend console. Set `SMTP_*` for real delivery and
+  `FRONTEND_BASE_URL` for the link host.
+- UI: a "Forgot password?" link on sign-in → Forgot-password page; a public
+  Set-password page reads the token from the URL; the Admin > Users form has a
+  "send email invite" toggle.
+
+### Continuous integration
+
+`.github/workflows/ci.yml` runs the backend pytest suite (Python 3.12) and the
+frontend build (Node 20) on every push and pull request.
+
 ## Frontend — quick start
 
 ```bash

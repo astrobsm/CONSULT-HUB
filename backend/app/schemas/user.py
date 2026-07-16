@@ -30,6 +30,27 @@ class UserCreate(BaseModel):
         return v
 
 
+class UserInvite(BaseModel):
+    full_name: str = Field(min_length=1, max_length=150)
+    email: str = Field(pattern=_EMAIL_RE, max_length=150)
+    role: str = "registrar"
+    designation: str | None = None
+    department_id: int | None = None
+    institution_id: int | None = None
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, v: str) -> str:
+        return v.strip().lower()
+
+    @field_validator("role")
+    @classmethod
+    def validate_role(cls, v: str) -> str:
+        if not is_valid_role(v):
+            raise ValueError(f"Unknown role: {v}")
+        return v
+
+
 class UserUpdate(BaseModel):
     role: str | None = None
     designation: str | None = None
