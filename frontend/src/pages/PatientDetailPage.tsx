@@ -2,6 +2,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { getPatient, listConsultations } from '../api/client'
 import { PriorityBadge, StatusBadge } from '../components/StatusBadge'
+import FhirExport from '../components/FhirExport'
 
 export default function PatientDetailPage() {
   const { id } = useParams()
@@ -124,6 +125,8 @@ export default function PatientDetailPage() {
           </tbody>
         </table>
       )}
+
+      <FhirExport patientId={p.id} hospitalNumber={p.hospital_number} />
     </section>
   )
 }

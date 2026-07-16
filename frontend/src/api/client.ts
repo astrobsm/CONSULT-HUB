@@ -293,6 +293,12 @@ export function postMessage(
   )
 }
 
+// ---- FHIR export ----
+
+export function getFhirEverything(patientId: number): Promise<unknown> {
+  return request<unknown>(`/fhir/Patient/${patientId}/$everything`)
+}
+
 export function health(): Promise<{ status: string; service: string }> {
   return request('/health')
 }

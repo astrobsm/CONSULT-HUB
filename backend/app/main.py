@@ -13,6 +13,7 @@ from app.api.routes import (
     consultations,
     dashboard,
     escalation,
+    fhir,
     messages,
     notifications,
     org,
@@ -122,3 +123,4 @@ app.include_router(users.router, prefix=settings.api_prefix)
 app.include_router(org.router, prefix=settings.api_prefix)
 app.include_router(attachments.router, prefix=settings.api_prefix)
 app.include_router(messages.router, prefix=settings.api_prefix)
+app.include_router(fhir.router, prefix=settings.api_prefix)

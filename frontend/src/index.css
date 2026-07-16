@@ -532,6 +532,27 @@ a.tile:hover { border-color: var(--primary); text-decoration: none; }
   white-space: nowrap;
 }
 
+/* FHIR export */
+.fhir { margin-top: 1.5rem; }
+.fhir__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.fhir__head h2 { margin: 0; }
+.fhir__json {
+  margin-top: 0.75rem;
+  max-height: 420px;
+  overflow: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.85rem;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
 /* Consultation chat */
 .chat { margin-top: 0.5rem; }
 .chat__thread {

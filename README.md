@@ -155,6 +155,25 @@ Alembic migrations before production.
 - UI: a discussion panel on the consult detail page (own messages right-aligned,
   Enter to send, polls every 15s for new messages).
 
+### FHIR R4 export
+
+- Read-only FHIR R4 API under `/api/fhir` (served as `application/fhir+json`,
+  tenant-scoped, auth required):
+  - `GET /fhir/metadata` — CapabilityStatement.
+  - `GET /fhir/Patient/{id}` and `GET /fhir/Patient?name=|identifier=` — a Patient
+    resource / searchset Bundle.
+  - `GET /fhir/ServiceRequest/{id}` and `GET /fhir/ServiceRequest?patient=` — a
+    consultation as a ServiceRequest / searchset Bundle.
+  - `GET /fhir/Patient/{id}/$everything` — a Bundle with the Patient and their
+    ServiceRequests.
+- Mapping (`app/fhir/mappers.py`): Consultation → **ServiceRequest** (status →
+  draft/active/on-hold/completed/revoked, priority routine/urgent/emergency →
+  routine/urgent/stat); Patient → **Patient** (hospital number as identifier,
+  name split, sex → gender, DOB, phone). Hand-built valid R4 JSON — no FHIR
+  library dependency.
+- UI: a FHIR export panel on the patient detail page — view the `$everything`
+  Bundle and download it as `.json`.
+
 ### Real-time push (WebSockets)
 
 - Authenticated channel at `WS /api/ws?token=<jwt>` (token in the query string
