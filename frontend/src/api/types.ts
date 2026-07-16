@@ -92,6 +92,16 @@ export interface Patient {
   created_at: string
 }
 
+export interface Attachment {
+  id: number
+  consultation_id: number
+  uploaded_by_user_id: number | null
+  filename: string
+  content_type: string
+  size_bytes: number
+  created_at: string
+}
+
 export interface AppNotification {
   id: number
   consultation_id: number | null

@@ -31,6 +31,10 @@ class Settings(BaseSettings):
     smtp_from: str = "ConsultHUB <no-reply@consulthub.local>"
     smtp_tls: bool = True
 
+    # Attachment storage. Local disk for dev; swap for S3-compatible in prod.
+    storage_dir: str = "./uploads"
+    max_upload_mb: int = 15
+
     # Comma-separated origins allowed by CORS.
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
 

@@ -1,5 +1,6 @@
 import type {
   AppNotification,
+  Attachment,
   Consultation,
   ConsultationCreate,
   ConsultationStatus,
@@ -211,6 +212,64 @@ export function updateDepartment(
     method: 'PATCH',
     body: JSON.stringify(payload),
   })
+}
+
+// ---- Attachments ----
+
+export function listAttachments(
+  consultationId: number,
+): Promise<Attachment[]> {
+  return request<Attachment[]>(`/consultations/${consultationId}/attachments`)
+}
+
+export async function uploadAttachment(
+  consultationId: number,
+  file: File,
+): Promise<Attachment> {
+  const form = new FormData()
+  form.append('file', file)
+  const token = getToken()
+  // Note: don't set Content-Type — the browser adds the multipart boundary.
+  const res = await fetch(
+    `${BASE}/consultations/${consultationId}/attachments`,
+    {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form,
+    },
+  )
+  if (!res.ok) {
+    const detail = await res
+      .json()
+      .then((b) => b.detail)
+      .catch(() => 'Upload failed')
+    throw new Error(detail ?? 'Upload failed')
+  }
+  return res.json() as Promise<Attachment>
+}
+
+export function deleteAttachment(id: number): Promise<void> {
+  return request<void>(`/attachments/${id}`, { method: 'DELETE' })
+}
+
+/** Fetch the file (with auth) and trigger a browser download. */
+export async function downloadAttachment(
+  attachment: Attachment,
+): Promise<void> {
+  const token = getToken()
+  const res = await fetch(`${BASE}/attachments/${attachment.id}/download`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  })
+  if (!res.ok) throw new Error('Download failed')
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = attachment.filename
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
 }
 
 export function health(): Promise<{ status: string; service: string }> {

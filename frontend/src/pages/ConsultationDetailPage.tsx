@@ -11,6 +11,7 @@ import {
   PriorityBadge,
   StatusBadge,
 } from '../components/StatusBadge'
+import AttachmentsPanel from '../components/AttachmentsPanel'
 
 export default function ConsultationDetailPage() {
   const { id } = useParams()
@@ -139,6 +140,8 @@ export default function ConsultationDetailPage() {
           <p className="error">{(mutation.error as Error).message}</p>
         )}
       </div>
+
+      <AttachmentsPanel consultationId={data.id} />
 
       {data.escalation_events.length > 0 && (
         <div className="escalation">

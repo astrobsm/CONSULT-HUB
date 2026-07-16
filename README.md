@@ -131,6 +131,21 @@ Alembic migrations before production.
 - UI: a header bell with a live unread badge (polls every 20s) and a dropdown that
   lists notifications, marks them read, and deep-links to the consultation.
 
+### Attachments
+
+- Files attach to a consultation: `POST /api/consultations/{id}/attachments`
+  (multipart), `GET /api/consultations/{id}/attachments`,
+  `GET /api/attachments/{id}/download`, `DELETE /api/attachments/{id}`.
+- Tenant-scoped (cross-tenant access 404); size-limited (`MAX_UPLOAD_MB`, 413 over
+  limit); delete allowed for the uploader or an admin.
+- **Storage** (`app/core/storage.py`): `LocalStorage` writes to `STORAGE_DIR` with
+  a small save/path/delete interface — swap the `storage` instance for an
+  S3-compatible backend without touching callers. Keys are random UUIDs
+  (traversal-safe); originals are preserved as the download filename.
+- UI: an attachments panel on the consult detail page — pick a file to upload,
+  list attachments with size/type, download (authenticated fetch → blob), delete.
+  Downloads use an auth header (not a bare link), so files stay access-controlled.
+
 ## Frontend — quick start
 
 ```bash
