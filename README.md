@@ -239,6 +239,20 @@ npm run dev
 
 - App: http://localhost:5173 (proxies `/api` to the backend on :8000)
 
+## Tests
+
+```bash
+cd backend
+.venv\Scripts\python.exe -m pytest      # 41 tests, ~20s
+```
+
+Each test runs against a freshly seeded, isolated SQLite database (see
+`tests/conftest.py`). Coverage spans auth, RBAC + tenant isolation, the
+consultation workflow and escalation engine, patients, notifications, secure
+chat, attachments, FHIR export, and the appointment module (no-double-book,
+even load distribution, holds, lifecycle, reschedule). `PBKDF2_ITERATIONS` is
+lowered in tests for speed.
+
 ## Roadmap
 
 The full spec covers multi-tenant auth/RBAC, patient registration, AI assist,

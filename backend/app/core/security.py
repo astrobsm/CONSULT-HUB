@@ -19,15 +19,15 @@ import jwt
 from app.core.config import settings
 
 _ALGO = "pbkdf2_sha256"
-_ITERATIONS = 200_000
 
 
 def hash_password(password: str) -> str:
     salt = os.urandom(16)
-    dk = hashlib.pbkdf2_hmac("sha256", password.encode(), salt, _ITERATIONS)
+    iterations = settings.pbkdf2_iterations
+    dk = hashlib.pbkdf2_hmac("sha256", password.encode(), salt, iterations)
     return "${}${}${}${}".format(
         _ALGO,
-        _ITERATIONS,
+        iterations,
         base64.b64encode(salt).decode(),
         base64.b64encode(dk).decode(),
     )
