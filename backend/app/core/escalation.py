@@ -56,7 +56,7 @@ def _fire(
     consultation: Consultation,
     step: EscalationStep,
     now: datetime,
-) -> None:
+) -> list[int]:
     # Imported here to avoid a circular import at module load.
     from app.services.notifications import notify_escalation
 
@@ -87,7 +87,7 @@ def _fire(
         )
     )
     consultation.escalation_level = step.level
-    notify_escalation(
+    return notify_escalation(
         db,
         consultation,
         level=step.level,
@@ -111,6 +111,7 @@ def run_escalations(
     )
 
     fired: list[dict] = []
+    notified: set[int] = set()
     for consultation in db.scalars(stmt):
         elapsed_min = (
             now - _as_utc(consultation.created_at)
@@ -119,7 +120,7 @@ def run_escalations(
             if consultation.escalation_level >= step.level:
                 continue
             if elapsed_min >= step.minutes:
-                _fire(db, consultation, step, now)
+                notified.update(_fire(db, consultation, step, now))
                 fired.append(
                     {
                         "consultation_id": consultation.id,
@@ -130,6 +131,10 @@ def run_escalations(
 
     if fired:
         db.commit()
+        # Push realtime signals only after the transaction is durable.
+        from app.core.realtime import manager
+
+        manager.publish(notified, {"type": "notification"})
     return fired
 
 

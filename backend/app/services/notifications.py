@@ -53,8 +53,12 @@ def notify_escalation(
     label: str,
     threshold_minutes: int,
     notify_role: str,
-) -> None:
-    """Create in-app notifications and send emails for one escalation step."""
+) -> list[int]:
+    """Create in-app notifications and send emails for one escalation step.
+
+    Returns the recipient user ids so the caller can push a realtime signal
+    after the escalation transaction commits.
+    """
     title = f"Escalation L{level}: consult #{consultation.id}"
     body = (
         f"{label} — consultation #{consultation.id} "
@@ -62,6 +66,7 @@ def notify_escalation(
         f"acknowledgement. Priority: {consultation.priority.value}."
     )
 
+    recipient_ids: list[int] = []
     for user in _escalation_recipients(db, consultation, notify_role, level):
         crud.create_notification(
             db,
@@ -73,8 +78,10 @@ def notify_escalation(
             body=body,
             commit=False,  # committed by the escalation run
         )
+        recipient_ids.append(user.id)
         if user.email:
             send_email(user.email, title, body)
+    return recipient_ids
 
 
 def notify_new_message(
@@ -103,6 +110,14 @@ def notify_new_message(
             title=f"New message on consult #{consultation.id}",
             body=f"{sender_name}: {preview}",
         )
+
+    # Live-update any open discussion thread for these users.
+    from app.core.realtime import manager
+
+    manager.publish(
+        recipients,
+        {"type": "message", "consultation_id": consultation.id},
+    )
 
 
 # Status changes worth telling the requester about.

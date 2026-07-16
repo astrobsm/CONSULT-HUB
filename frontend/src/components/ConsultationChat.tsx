@@ -16,7 +16,8 @@ export default function ConsultationChat({
   const { data: messages } = useQuery({
     queryKey: ['messages', consultationId],
     queryFn: () => listMessages(consultationId),
-    refetchInterval: 15000, // poll for new messages
+    // WebSocket push drives live updates; slow poll is a fallback only.
+    refetchInterval: 60000,
   })
 
   const send = useMutation({

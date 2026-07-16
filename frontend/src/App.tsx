@@ -4,6 +4,7 @@ import RequireAuth from './auth/RequireAuth'
 import RequireAdmin from './auth/RequireAdmin'
 import { isAdminRole } from './api/client'
 import NotificationBell from './components/NotificationBell'
+import RealtimeBridge from './realtime/RealtimeBridge'
 import AdminUsersPage from './pages/AdminUsersPage'
 import AdminDepartmentsPage from './pages/AdminDepartmentsPage'
 import AccountPage from './pages/AccountPage'
@@ -56,6 +57,7 @@ function Header() {
 export default function App() {
   return (
     <div className="app">
+      <RealtimeBridge />
       <Header />
       <main className="app__main">
         <Routes>

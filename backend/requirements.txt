@@ -7,3 +7,4 @@ python-dotenv>=1.0
 pyjwt>=2.8
 python-multipart>=0.0.9
 apscheduler>=3.10,<4
+websockets>=12

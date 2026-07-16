@@ -19,7 +19,8 @@ export default function NotificationBell() {
   const { data: count } = useQuery({
     queryKey: ['notifications', 'unread'],
     queryFn: getUnreadCount,
-    refetchInterval: 20000,
+    // WebSocket push drives updates; this is just a slow fallback.
+    refetchInterval: 60000,
   })
 
   const { data: notifications } = useQuery({

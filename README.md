@@ -155,6 +155,24 @@ Alembic migrations before production.
 - UI: a discussion panel on the consult detail page (own messages right-aligned,
   Enter to send, polls every 15s for new messages).
 
+### Real-time push (WebSockets)
+
+- Authenticated channel at `WS /api/ws?token=<jwt>` (token in the query string
+  since browsers can't set headers on the WS handshake). Invalid token → close
+  1008.
+- `app/core/realtime.py` holds a per-user connection registry and a thread-safe
+  `publish()` that schedules the send on the main event loop via
+  `run_coroutine_threadsafe` — so synchronous routes **and** the background
+  escalation thread can push. Events are published **after** the DB commit, so a
+  client that refetches on the event sees committed data.
+- Events: `{"type":"notification"}` (a new notification for you → refresh the
+  bell) and `{"type":"message","consultation_id":N}` (a new chat message → refresh
+  that thread). The frontend `RealtimeBridge` connects, invalidates the matching
+  queries, and reconnects with backoff; the bell/chat keep a slow 60s poll only as
+  a fallback.
+- Uvicorn needs a WS implementation — `websockets` is in requirements. In dev the
+  Vite proxy forwards the upgrade (`ws: true`).
+
 ### Account self-service
 
 - `PATCH /api/auth/me` edits the caller's own profile (full name, designation);

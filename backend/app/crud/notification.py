@@ -29,6 +29,10 @@ def create_notification(
     if commit:
         db.commit()
         db.refresh(note)
+        # Push a live signal so the recipient refreshes (post-commit).
+        from app.core.realtime import manager
+
+        manager.publish([user_id], {"type": "notification"})
     return note
 
 

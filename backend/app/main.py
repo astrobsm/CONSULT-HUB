@@ -1,9 +1,11 @@
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 
 from apscheduler.schedulers.background import BackgroundScheduler
-from fastapi import FastAPI
+from fastapi import FastAPI, Query, WebSocket, WebSocketException, status
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.websockets import WebSocketDisconnect
 
 from app.api.routes import (
     attachments,
@@ -18,8 +20,11 @@ from app.api.routes import (
     users,
 )
 from app.core.config import settings
-from app.core.database import Base, engine
+from app.core.database import Base, SessionLocal, engine
 from app.core.escalation import run_escalations_job
+from app.core.realtime import manager as realtime
+from app.core.security import decode_access_token
+from app.models.entities import User
 
 # Import models so their tables register on Base.metadata.
 import app.models  # noqa: F401
@@ -31,6 +36,9 @@ logger = logging.getLogger("consulthub")
 async def lifespan(_: FastAPI):
     # Dev convenience: auto-create tables. Use Alembic in production.
     Base.metadata.create_all(bind=engine)
+
+    # Capture the running loop so sync code can push over WebSockets.
+    realtime.set_loop(asyncio.get_running_loop())
 
     scheduler: BackgroundScheduler | None = None
     if settings.escalation_enabled:
@@ -70,6 +78,38 @@ app.add_middleware(
 @app.get(f"{settings.api_prefix}/health", tags=["health"])
 def health() -> dict[str, str]:
     return {"status": "ok", "service": settings.app_name}
+
+
+@app.websocket(f"{settings.api_prefix}/ws")
+async def websocket_endpoint(
+    websocket: WebSocket, token: str = Query(default="")
+) -> None:
+    """Authenticated push channel. Token is passed as a query param since
+    browsers can't set headers on a WebSocket handshake."""
+    try:
+        payload = decode_access_token(token)
+        user_id = int(payload["sub"])
+    except Exception:
+        raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION)
+
+    db = SessionLocal()
+    try:
+        user = db.get(User, user_id)
+    finally:
+        db.close()
+    if user is None or not user.is_active:
+        raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION)
+
+    await realtime.connect(user_id, websocket)
+    try:
+        while True:
+            # We don't expect client messages; this keeps the socket open and
+            # detects disconnects.
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        realtime.disconnect(user_id, websocket)
+    except Exception:
+        realtime.disconnect(user_id, websocket)
 
 
 app.include_router(auth.router, prefix=settings.api_prefix)
