@@ -1,5 +1,6 @@
 import type {
   Appointment,
+  AppointmentAnalytics,
   AppointmentStatus,
   AppointmentType,
   AppNotification,
@@ -11,9 +12,12 @@ import type {
   ConsultationMessage,
   ConsultationStatus,
   DashboardSummary,
+  NoShowRisk,
   Patient,
   PatientCreate,
+  SlotSuggestion,
   Station,
+  WaitEstimate,
   WaitingEntry,
 } from './types'
 
@@ -468,6 +472,31 @@ export function listWaitingList(
 
 export function removeWaitingEntry(id: number): Promise<void> {
   return request<void>(`/waiting-list/${id}`, { method: 'DELETE' })
+}
+
+// ---- Intelligence & analytics ----
+
+export function getNoShowRisk(appointmentId: number): Promise<NoShowRisk> {
+  return request<NoShowRisk>(`/appointments/${appointmentId}/no-show-risk`)
+}
+export function getWaitEstimate(
+  appointmentId: number,
+): Promise<WaitEstimate> {
+  return request<WaitEstimate>(`/appointments/${appointmentId}/wait-estimate`)
+}
+export function getSuggestions(
+  appointmentId: number,
+): Promise<SlotSuggestion[]> {
+  return request<SlotSuggestion[]>(`/appointments/${appointmentId}/suggestions`)
+}
+export function getClinicAnalytics(
+  clinicId: number,
+  from: string,
+  to: string,
+): Promise<AppointmentAnalytics> {
+  return request<AppointmentAnalytics>(
+    `/clinics/${clinicId}/analytics?from=${from}&to=${to}`,
+  )
 }
 
 export function health(): Promise<{ status: string; service: string }> {

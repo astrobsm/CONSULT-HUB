@@ -20,6 +20,7 @@ import {
 } from '../api/types'
 import RescheduleDialog from '../components/RescheduleDialog'
 import QrModal from '../components/QrModal'
+import InsightsModal from '../components/InsightsModal'
 
 function todayIso(): string {
   const d = new Date()
@@ -41,6 +42,7 @@ export default function AppointmentsPage() {
   const [clinicId, setClinicId] = useState<number | ''>('')
   const [rescheduling, setRescheduling] = useState<Appointment | null>(null)
   const [qrAppt, setQrAppt] = useState<Appointment | null>(null)
+  const [insightsAppt, setInsightsAppt] = useState<Appointment | null>(null)
 
   const invalidateAppointments = () =>
     queryClient.invalidateQueries({ queryKey: ['appointments'] })
@@ -150,6 +152,13 @@ export default function AppointmentsPage() {
                       >
                         QR
                       </button>
+                      <button
+                        className="btn btn--sm"
+                        onClick={() => setInsightsAppt(a)}
+                        title="No-show risk, wait, suggestions"
+                      >
+                        insights
+                      </button>
                       <ApptActions
                         appt={a}
                         onChange={invalidateAppointments}
@@ -177,6 +186,13 @@ export default function AppointmentsPage() {
 
       {qrAppt && (
         <QrModal appointment={qrAppt} onClose={() => setQrAppt(null)} />
+      )}
+
+      {insightsAppt && (
+        <InsightsModal
+          appointment={insightsAppt}
+          onClose={() => setInsightsAppt(null)}
+        />
       )}
     </section>
   )

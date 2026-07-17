@@ -156,6 +156,41 @@ export interface Availability {
   stations: StationAvailability[]
 }
 
+export interface NoShowRisk {
+  score: number
+  band: 'low' | 'medium' | 'high'
+  factors: Record<string, unknown>
+}
+
+export interface WaitEstimate {
+  estimated_wait_minutes: number
+  ahead_in_queue: number
+  slot_minutes: number
+}
+
+export interface SlotSuggestion {
+  slot_start: string
+  station_id: number
+  station_name: string
+}
+
+export interface AppointmentAnalytics {
+  clinic_id: number
+  date_from: string
+  date_to: string
+  total: number
+  completed: number
+  did_not_attend: number
+  cancelled: number
+  no_show_rate: number
+  completion_rate: number
+  cancellation_rate: number
+  by_status: Record<string, number>
+  by_type: Record<string, number>
+  peak_hours: { hour: number; count: number }[]
+  by_station: { station_id: number; station_name: string; count: number }[]
+}
+
 export interface WaitingEntry {
   id: number
   clinic_id: number

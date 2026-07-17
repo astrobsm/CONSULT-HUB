@@ -104,6 +104,27 @@ separate.
 - UI: a QR modal + reception "check-in by code" bar + waiting-list panel on the
   Appointments page.
 
+### Appointment intelligence & analytics
+
+- **Intelligence** — transparent, data-driven *heuristics* (not ML), each returning
+  the factors behind its estimate, so a trained model / LLM can replace the internals
+  later without changing the API:
+  - No-show risk: `GET /appointments/{id}/no-show-risk` (patient history × type ×
+    lead-time → score + low/medium/high band).
+  - Wait-time: `GET /appointments/{id}/wait-estimate` (queue ahead × slot duration).
+  - Smart rescheduling: `GET /appointments/{id}/suggestions` (earliest free slots
+    over the next 14 days).
+- **Analytics** — `GET /clinics/{id}/analytics?from=&to=`: totals, completion /
+  no-show / cancellation rates, status + type mix, per-station load, peak hours.
+- **Patient reminders** — patients now have an `email`; reminders email the patient
+  (in addition to staff in-app notifications) when one is on file.
+- UI: an **Analytics** page (KPI tiles + breakdown bars), an **insights** modal per
+  appointment (risk / wait / suggestions), and voice search on the Patients page
+  (browser-native Web Speech API).
+- **Note:** the estimators are heuristics labeled as such — honest analytics, not a
+  trained model; patient reminders need real transports (SMS/WhatsApp) for full
+  coverage; a patient self-booking portal (patient login) is not yet built.
+
 ### Administration & RBAC
 
 - **Self-registration is disabled.** Admins create users via `POST /api/users`;

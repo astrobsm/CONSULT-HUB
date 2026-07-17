@@ -644,6 +644,20 @@ a.tile:hover { border-color: var(--primary); text-decoration: none; }
 }
 .waitlist-cta { display: flex; align-items: center; gap: 1rem; margin-top: 0.6rem; }
 
+/* Insights */
+.insight-h { font-size: 0.85rem; margin: 1rem 0 0.25rem; color: var(--muted); }
+.suggestion-list { list-style: none; padding: 0; margin: 0.25rem 0 0; }
+.suggestion-list li {
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.88rem;
+}
+.badge--risk-low { background: #dcfce7; color: #166534; }
+.badge--risk-medium { background: #fef3c7; color: #92400e; }
+.badge--risk-high { background: #fee2e2; color: #991b1b; }
+.voice { padding: 0.5rem 0.6rem; }
+.voice--on { border-color: var(--viz-critical, #d03b3b); color: var(--viz-critical, #d03b3b); }
+
 /* Waiting-list status badges */
 .badge--waiting { background: #fef3c7; color: #92400e; }
 .badge--promoted { background: #dcfce7; color: #166534; }

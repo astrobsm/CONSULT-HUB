@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { listPatients } from '../api/client'
+import VoiceButton from '../components/VoiceButton'
 
 export default function PatientsListPage() {
   const [term, setTerm] = useState('')
@@ -32,6 +33,12 @@ export default function PatientsListPage() {
           value={term}
           onChange={(e) => setTerm(e.target.value)}
           placeholder="Search by name or hospital number…"
+        />
+        <VoiceButton
+          onResult={(text) => {
+            setTerm(text)
+            setSearch(text)
+          }}
         />
         <button type="submit" className="btn">
           Search
