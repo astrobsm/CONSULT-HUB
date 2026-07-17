@@ -179,6 +179,52 @@ class CheckInRequest(BaseModel):
     code: str
 
 
+class NoShowRisk(BaseModel):
+    score: float
+    band: str
+    factors: dict
+
+
+class WaitEstimate(BaseModel):
+    estimated_wait_minutes: int
+    ahead_in_queue: int
+    slot_minutes: int
+
+
+class SlotSuggestion(BaseModel):
+    slot_start: datetime
+    station_id: int
+    station_name: str
+
+
+class StationCount(BaseModel):
+    station_id: int
+    station_name: str
+    count: int
+
+
+class HourCount(BaseModel):
+    hour: int
+    count: int
+
+
+class AppointmentAnalytics(BaseModel):
+    clinic_id: int
+    date_from: str
+    date_to: str
+    total: int
+    completed: int
+    did_not_attend: int
+    cancelled: int
+    no_show_rate: float
+    completion_rate: float
+    cancellation_rate: float
+    by_status: dict[str, int]
+    by_type: dict[str, int]
+    peak_hours: list[HourCount]
+    by_station: list[StationCount]
+
+
 class WaitingListCreate(BaseModel):
     patient_id: int
     target_date: datetime

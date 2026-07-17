@@ -111,6 +111,8 @@ def run_reminders(db: Session, now: datetime | None = None) -> list[dict]:
     """
     now = now or _now()
     from app.crud import notification as crud_notification
+    from app.core.email import send_email
+    from app.models.entities import Patient
 
     stmt = select(Appointment).where(
         Appointment.status.in_(
@@ -149,7 +151,7 @@ def run_reminders(db: Session, now: datetime | None = None) -> list[dict]:
                     sent_at=now,
                 )
             )
-        # Notify only for the tightest bucket.
+        # Notify staff in-app for the tightest bucket.
         when = slot.strftime("%Y-%m-%d %H:%M")
         for user_id in _reminder_recipients(db, appt):
             crud_notification.create_notification(
@@ -162,6 +164,17 @@ def run_reminders(db: Session, now: datetime | None = None) -> list[dict]:
                     f"Appointment {appt.appointment_number or appt.id} "
                     f"is scheduled for {when}."
                 ),
+            )
+        # Patient-facing reminder if we have an email on file.
+        patient = db.get(Patient, appt.patient_id)
+        if patient and patient.email:
+            send_email(
+                patient.email,
+                f"Appointment reminder — {when}",
+                f"Dear {patient.full_name}, this is a reminder that you have "
+                f"an appointment on {when} "
+                f"(ref {appt.appointment_number or appt.id}). "
+                "Please arrive 10 minutes early to check in.",
             )
         fired.append({"appointment_id": appt.id, "offset": tightest[1]})
 

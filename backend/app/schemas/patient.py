@@ -11,6 +11,7 @@ class PatientBase(BaseModel):
     date_of_birth: date | None = None
     sex: str | None = None
     phone: str | None = None
+    email: str | None = None
     blood_group: str | None = None
     genotype: str | None = None
     weight_kg: float | None = Field(default=None, gt=0, le=700)

@@ -12,6 +12,7 @@ from app.models.entities import User
 from app.models.scheduling import Clinic, ConsultationStation
 from app.crud import patient as crud_patient
 from app.schemas.scheduling import (
+    AppointmentAnalytics,
     AvailabilityRead,
     ClinicCreate,
     ClinicRead,
@@ -23,6 +24,7 @@ from app.schemas.scheduling import (
     WaitingListCreate,
     WaitingListRead,
 )
+from app.services.analytics_appointments import appointment_analytics
 from app.services.scheduling import station_availability
 
 router = APIRouter(tags=["clinics"])
@@ -155,6 +157,20 @@ def availability(
             )
             for r in rows
         ],
+    )
+
+
+@router.get("/clinics/{clinic_id}/analytics", response_model=AppointmentAnalytics)
+def clinic_analytics(
+    clinic_id: int,
+    date_from: date = Query(alias="from"),
+    date_to: date = Query(alias="to"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> AppointmentAnalytics:
+    clinic = _scoped_clinic(clinic_id, db, current_user)
+    return appointment_analytics(
+        db, clinic, date_from=date_from, date_to=date_to
     )
 
 

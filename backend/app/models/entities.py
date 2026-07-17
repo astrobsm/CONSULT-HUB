@@ -73,6 +73,7 @@ class Patient(Base):
     date_of_birth: Mapped[date | None] = mapped_column(nullable=True)
     sex: Mapped[str | None] = mapped_column(String(20), nullable=True)
     phone: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    email: Mapped[str | None] = mapped_column(String(150), nullable=True)
     blood_group: Mapped[str | None] = mapped_column(String(10), nullable=True)
     genotype: Mapped[str | None] = mapped_column(String(10), nullable=True)
     weight_kg: Mapped[float | None] = mapped_column(nullable=True)

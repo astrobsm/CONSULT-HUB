@@ -20,8 +20,12 @@ from app.schemas.scheduling import (
     CheckInRequest,
     HoldCreate,
     HoldRead,
+    NoShowRisk,
     RescheduleRequest,
+    SlotSuggestion,
+    WaitEstimate,
 )
+from app.services import intelligence
 from app.services.notifications import notify_appointment
 from app.services.qr import generate_qr_svg
 from app.services.scheduling import (
@@ -254,6 +258,38 @@ def check_in(
     except InvalidAppointmentTransition as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     return crud.to_read(db, updated)
+
+
+@router.get("/{appointment_id}/no-show-risk", response_model=NoShowRisk)
+def no_show_risk(
+    appointment_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> NoShowRisk:
+    appt = _scoped_appointment(appointment_id, db, current_user)
+    return intelligence.no_show_risk(db, appt)
+
+
+@router.get("/{appointment_id}/wait-estimate", response_model=WaitEstimate)
+def wait_estimate(
+    appointment_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> WaitEstimate:
+    appt = _scoped_appointment(appointment_id, db, current_user)
+    return intelligence.wait_estimate(db, appt)
+
+
+@router.get(
+    "/{appointment_id}/suggestions", response_model=list[SlotSuggestion]
+)
+def reschedule_suggestions(
+    appointment_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[SlotSuggestion]:
+    appt = _scoped_appointment(appointment_id, db, current_user)
+    return intelligence.reschedule_suggestions(db, appt)
 
 
 @router.get("/{appointment_id}/qrcode")
