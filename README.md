@@ -90,6 +90,19 @@ separate.
 - UI: an **Appointments** page (book: patient → clinic → date → type → pick a time;
   and a filterable clinic list/queue with lifecycle actions), plus a **Clinics** tab
   in Admin to manage clinics and stations.
+- **Waiting list:** when a day is full, `POST /clinics/{id}/waiting-list` adds a
+  patient; cancelling an appointment **auto-promotes** the oldest waiting patient
+  into the freed slot (via the same booking path) and links the new appointment.
+- **QR check-in:** each booking gets a `check_in_code`; `GET /appointments/{id}/qrcode`
+  returns an SVG QR (segno, no image deps); reception scans/enters it at
+  `POST /appointments/check-in` to check the patient in and assign a queue number.
+- **Reminders:** a background job (`REMINDER_INTERVAL_SECONDS`) sends reminders at
+  7d / 3d / 24h / 2h / 30m before each appointment — each offset once, the tightest
+  crossed bucket fires, logged in `appointment_reminders` and delivered as in-app
+  notifications to the booker and assigned clinician. The core `run_reminders(now)`
+  is a pure, deterministically testable function.
+- UI: a QR modal + reception "check-in by code" bar + waiting-list panel on the
+  Appointments page.
 
 ### Administration & RBAC
 

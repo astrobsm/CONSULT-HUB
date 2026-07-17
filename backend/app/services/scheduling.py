@@ -8,6 +8,7 @@ integrity error and, for auto-assignment, moving to the next free station.
 
 from __future__ import annotations
 
+import uuid
 from datetime import date, datetime, timedelta, timezone
 
 from sqlalchemy import select
@@ -262,6 +263,7 @@ def book_appointment(
         appt.appointment_number = (
             f"APT-{clinic.id}-{slot_start:%Y%m%d}-{appt.id}"
         )
+        appt.check_in_code = uuid.uuid4().hex[:16]
         # Release any matching hold now that the booking is durable.
         db.query(SlotHold).filter(
             SlotHold.station_id == station.id,

@@ -2,10 +2,14 @@ import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   bookAppointment,
+  checkInByCode,
   getAvailability,
+  joinWaitingList,
   listAppointments,
   listClinics,
   listPatients,
+  listWaitingList,
+  removeWaitingEntry,
   transitionAppointment,
 } from '../api/client'
 import {
@@ -15,6 +19,7 @@ import {
   type AppointmentStatus,
 } from '../api/types'
 import RescheduleDialog from '../components/RescheduleDialog'
+import QrModal from '../components/QrModal'
 
 function todayIso(): string {
   const d = new Date()
@@ -35,6 +40,7 @@ export default function AppointmentsPage() {
   const [date, setDate] = useState(todayIso())
   const [clinicId, setClinicId] = useState<number | ''>('')
   const [rescheduling, setRescheduling] = useState<Appointment | null>(null)
+  const [qrAppt, setQrAppt] = useState<Appointment | null>(null)
 
   const invalidateAppointments = () =>
     queryClient.invalidateQueries({ queryKey: ['appointments'] })
@@ -67,6 +73,12 @@ export default function AppointmentsPage() {
           queryClient.invalidateQueries({ queryKey: ['appointments'] })
         }}
       />
+
+      <CheckInBar onDone={invalidateAppointments} />
+
+      {clinicId !== '' && (
+        <WaitingListPanel clinicId={clinicId} date={date} />
+      )}
 
       <div className="panel">
         <div className="appt-filters">
@@ -131,11 +143,19 @@ export default function AppointmentsPage() {
                     </span>
                   </td>
                   <td>
-                    <ApptActions
-                      appt={a}
-                      onChange={invalidateAppointments}
-                      onReschedule={() => setRescheduling(a)}
-                    />
+                    <div className="appt-actions">
+                      <button
+                        className="btn btn--sm"
+                        onClick={() => setQrAppt(a)}
+                      >
+                        QR
+                      </button>
+                      <ApptActions
+                        appt={a}
+                        onChange={invalidateAppointments}
+                        onReschedule={() => setRescheduling(a)}
+                      />
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -154,7 +174,115 @@ export default function AppointmentsPage() {
           }}
         />
       )}
+
+      {qrAppt && (
+        <QrModal appointment={qrAppt} onClose={() => setQrAppt(null)} />
+      )}
     </section>
+  )
+}
+
+function CheckInBar({ onDone }: { onDone: () => void }) {
+  const [code, setCode] = useState('')
+  const [msg, setMsg] = useState<string | null>(null)
+  const [err, setErr] = useState<string | null>(null)
+  const mut = useMutation({
+    mutationFn: () => checkInByCode(code.trim()),
+    onSuccess: (a) => {
+      setMsg(`Checked in ${a.patient_name} — queue #${a.queue_position}`)
+      setErr(null)
+      setCode('')
+      onDone()
+    },
+    onError: (e) => {
+      setErr((e as Error).message)
+      setMsg(null)
+    },
+  })
+  return (
+    <div className="panel">
+      <h2>Reception check-in</h2>
+      <form
+        className="search-bar"
+        onSubmit={(e) => {
+          e.preventDefault()
+          if (code.trim()) mut.mutate()
+        }}
+      >
+        <input
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          placeholder="Scan or type the appointment QR code…"
+        />
+        <button className="btn btn--primary" disabled={mut.isPending}>
+          Check in
+        </button>
+      </form>
+      {msg && <p className="success-msg">{msg}</p>}
+      {err && <p className="error">{err}</p>}
+    </div>
+  )
+}
+
+function WaitingListPanel({
+  clinicId,
+  date,
+}: {
+  clinicId: number
+  date: string
+}) {
+  const queryClient = useQueryClient()
+  const { data } = useQuery({
+    queryKey: ['waiting', clinicId, date],
+    queryFn: () => listWaitingList(clinicId, date),
+  })
+  const remove = useMutation({
+    mutationFn: (id: number) => removeWaitingEntry(id),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['waiting'] }),
+  })
+  const entries = data ?? []
+  if (entries.length === 0) return null
+  return (
+    <div className="panel">
+      <h2>Waiting list ({date})</h2>
+      <table className="table">
+        <thead>
+          <tr>
+            <th>Patient</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th />
+          </tr>
+        </thead>
+        <tbody>
+          {entries.map((e) => (
+            <tr key={e.id}>
+              <td>{e.patient_name}</td>
+              <td className="muted">
+                {e.appointment_type.replace(/_/g, ' ')}
+              </td>
+              <td>
+                <span className={`badge badge--status badge--${e.status}`}>
+                  {e.status}
+                </span>
+              </td>
+              <td>
+                {e.status === 'waiting' && (
+                  <button
+                    className="btn btn--sm"
+                    disabled={remove.isPending}
+                    onClick={() => remove.mutate(e.id)}
+                  >
+                    remove
+                  </button>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   )
 }
 
@@ -266,6 +394,21 @@ function BookingPanel({
 
   const canCheck = patientId !== '' && clinicId !== ''
 
+  const waitlist = useMutation({
+    mutationFn: () =>
+      joinWaitingList(Number(clinicId), {
+        patient_id: Number(patientId),
+        target_date: `${date}T00:00:00`,
+        appointment_type: type as never,
+      }),
+    onSuccess: () => {
+      setResult('Added to the waiting list — will be offered a freed slot.')
+      setError(null)
+      onBooked()
+    },
+    onError: (e) => setError((e as Error).message),
+  })
+
   return (
     <div className="panel">
       <h2>Book appointment</h2>
@@ -352,9 +495,20 @@ function BookingPanel({
             Pick a time — the system assigns the least-busy free station.
           </p>
           {freeTimes.length === 0 ? (
-            <p className="muted small">
-              No available slots (clinic closed or fully booked).
-            </p>
+            <div className="waitlist-cta">
+              <p className="muted small">
+                No available slots (clinic closed or fully booked).
+              </p>
+              {patientId !== '' && (
+                <button
+                  className="btn"
+                  disabled={waitlist.isPending}
+                  onClick={() => waitlist.mutate()}
+                >
+                  Join waiting list
+                </button>
+              )}
+            </div>
           ) : (
             <div className="slots">
               {freeTimes.map((t) => (

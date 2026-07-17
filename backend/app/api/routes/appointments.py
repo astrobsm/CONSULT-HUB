@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
@@ -17,11 +17,13 @@ from app.schemas.scheduling import (
     AppointmentCreate,
     AppointmentRead,
     AppointmentTransition,
+    CheckInRequest,
     HoldCreate,
     HoldRead,
     RescheduleRequest,
 )
 from app.services.notifications import notify_appointment
+from app.services.qr import generate_qr_svg
 from app.services.scheduling import (
     SchedulingError,
     SlotUnavailable,
@@ -29,6 +31,7 @@ from app.services.scheduling import (
     create_hold,
     reschedule_appointment,
 )
+from app.services.waiting_reminders import promote_from_waiting_list
 
 router = APIRouter(prefix="/appointments", tags=["appointments"])
 
@@ -225,4 +228,42 @@ def transition(
             slot_start=updated.slot_start.strftime("%Y-%m-%d %H:%M"),
             event="cancelled",
         )
+        # A slot just freed — promote the next waiting patient, if any.
+        if clinic is not None:
+            promote_from_waiting_list(db, clinic, updated.slot_start.date())
     return crud.to_read(db, updated)
+
+
+@router.post("/check-in", response_model=AppointmentRead)
+def check_in(
+    payload: CheckInRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> AppointmentRead:
+    """Reception check-in by scanning/entering the QR code."""
+    appt = crud.get_appointment_by_code(db, payload.code.strip())
+    if appt is None or (
+        current_user.institution_id is not None
+        and appt.institution_id != current_user.institution_id
+    ):
+        raise HTTPException(status_code=404, detail="Appointment not found")
+    try:
+        updated = crud.transition_appointment(
+            db, appt, to_status=AppointmentStatus.CHECKED_IN
+        )
+    except InvalidAppointmentTransition as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    return crud.to_read(db, updated)
+
+
+@router.get("/{appointment_id}/qrcode")
+def appointment_qrcode(
+    appointment_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Response:
+    appt = _scoped_appointment(appointment_id, db, current_user)
+    if not appt.check_in_code:
+        raise HTTPException(status_code=404, detail="No check-in code")
+    svg = generate_qr_svg(appt.check_in_code)
+    return Response(content=svg, media_type="image/svg+xml")

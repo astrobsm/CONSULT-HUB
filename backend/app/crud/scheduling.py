@@ -6,7 +6,12 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.entities import Patient
-from app.models.scheduling import Appointment, Clinic, ConsultationStation
+from app.models.scheduling import (
+    Appointment,
+    Clinic,
+    ConsultationStation,
+    WaitingListEntry,
+)
 from app.models.scheduling_enums import (
     APPOINTMENT_TRANSITIONS,
     AppointmentStatus,
@@ -111,6 +116,7 @@ def to_read(db: Session, appt: Appointment) -> dict:
     return {
         "id": appt.id,
         "appointment_number": appt.appointment_number,
+        "check_in_code": appt.check_in_code,
         "clinic_id": appt.clinic_id,
         "clinic_name": clinic.name if clinic else None,
         "station_id": appt.station_id,
@@ -155,6 +161,77 @@ def list_appointments(
     if patient_id is not None:
         stmt = stmt.where(Appointment.patient_id == patient_id)
     return list(db.scalars(stmt))
+
+
+def get_appointment_by_code(
+    db: Session, code: str
+) -> Appointment | None:
+    return db.scalar(
+        select(Appointment).where(Appointment.check_in_code == code)
+    )
+
+
+# ---- Waiting list ----
+
+def add_waiting_entry(
+    db: Session,
+    *,
+    clinic: Clinic,
+    patient_id: int,
+    target_date: datetime,
+    appointment_type,
+    added_by_user_id: int | None,
+) -> WaitingListEntry:
+    entry = WaitingListEntry(
+        institution_id=clinic.institution_id,
+        clinic_id=clinic.id,
+        patient_id=patient_id,
+        target_date=target_date,
+        appointment_type=appointment_type,
+        added_by_user_id=added_by_user_id,
+    )
+    db.add(entry)
+    db.commit()
+    db.refresh(entry)
+    return entry
+
+
+def get_waiting_entry(
+    db: Session, entry_id: int
+) -> WaitingListEntry | None:
+    return db.get(WaitingListEntry, entry_id)
+
+
+def list_waiting_entries(
+    db: Session, *, clinic_id: int, day: date | None = None
+) -> list[WaitingListEntry]:
+    stmt = (
+        select(WaitingListEntry)
+        .where(WaitingListEntry.clinic_id == clinic_id)
+        .order_by(WaitingListEntry.created_at)
+    )
+    if day is not None:
+        lo = datetime(day.year, day.month, day.day)
+        stmt = stmt.where(
+            WaitingListEntry.target_date >= lo,
+            WaitingListEntry.target_date < lo + timedelta(days=1),
+        )
+    return list(db.scalars(stmt))
+
+
+def waiting_entry_read(db: Session, entry: WaitingListEntry) -> dict:
+    patient = db.get(Patient, entry.patient_id) if entry.patient_id else None
+    return {
+        "id": entry.id,
+        "clinic_id": entry.clinic_id,
+        "patient_id": entry.patient_id,
+        "patient_name": patient.full_name if patient else None,
+        "target_date": entry.target_date,
+        "appointment_type": entry.appointment_type,
+        "status": entry.status,
+        "promoted_appointment_id": entry.promoted_appointment_id,
+        "created_at": entry.created_at,
+    }
 
 
 def transition_appointment(

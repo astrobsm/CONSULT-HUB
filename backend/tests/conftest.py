@@ -8,6 +8,7 @@ import os
 
 os.environ.setdefault("DATABASE_URL", "sqlite:///./test_consulthub.db")
 os.environ.setdefault("ESCALATION_ENABLED", "false")
+os.environ.setdefault("REMINDERS_ENABLED", "false")
 os.environ.setdefault("SECRET_KEY", "test-secret-key-at-least-32-bytes-long!")
 os.environ.setdefault("STORAGE_DIR", "./test_uploads")
 os.environ.setdefault("PBKDF2_ITERATIONS", "1000")  # fast hashing for tests

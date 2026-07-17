@@ -13,6 +13,7 @@ from app.models.scheduling_enums import (
     LoadBalancing,
     StationStatus,
     StationType,
+    WaitingStatus,
 )
 
 
@@ -120,6 +121,10 @@ class Appointment(Base):
     appointment_number: Mapped[str | None] = mapped_column(
         String(40), nullable=True, index=True
     )
+    # Opaque token encoded in the QR code for check-in.
+    check_in_code: Mapped[str | None] = mapped_column(
+        String(40), nullable=True, index=True
+    )
     appointment_type: Mapped[AppointmentType] = mapped_column(
         default=AppointmentType.NEW_PATIENT
     )
@@ -146,6 +151,51 @@ class Appointment(Base):
     updated_at: Mapped[datetime] = mapped_column(
         default=utcnow, onupdate=utcnow
     )
+
+
+class WaitingListEntry(Base):
+    """A patient waiting for a slot in a clinic on a given day."""
+
+    __tablename__ = "waiting_list_entries"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    institution_id: Mapped[int | None] = mapped_column(
+        ForeignKey("institutions.id"), nullable=True
+    )
+    clinic_id: Mapped[int] = mapped_column(
+        ForeignKey("clinics.id"), index=True
+    )
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"))
+    target_date: Mapped[datetime] = mapped_column(index=True)
+    appointment_type: Mapped[AppointmentType] = mapped_column(
+        default=AppointmentType.REVIEW
+    )
+    status: Mapped[WaitingStatus] = mapped_column(
+        default=WaitingStatus.WAITING, index=True
+    )
+    promoted_appointment_id: Mapped[int | None] = mapped_column(
+        ForeignKey("appointments.id"), nullable=True
+    )
+    added_by_user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(default=utcnow)
+
+
+class AppointmentReminder(Base):
+    """Records that a reminder at a given offset was sent for an appointment."""
+
+    __tablename__ = "appointment_reminders"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    appointment_id: Mapped[int] = mapped_column(
+        ForeignKey("appointments.id"), index=True
+    )
+    institution_id: Mapped[int | None] = mapped_column(
+        ForeignKey("institutions.id"), nullable=True
+    )
+    offset_label: Mapped[str] = mapped_column(String(10))
+    sent_at: Mapped[datetime] = mapped_column(default=utcnow)
 
 
 class SlotHold(Base):

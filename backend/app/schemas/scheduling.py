@@ -10,6 +10,7 @@ from app.models.scheduling_enums import (
     LoadBalancing,
     StationStatus,
     StationType,
+    WaitingStatus,
 )
 
 
@@ -145,6 +146,7 @@ class AppointmentCreate(BaseModel):
 class AppointmentRead(BaseModel):
     id: int
     appointment_number: str | None
+    check_in_code: str | None
     clinic_id: int
     clinic_name: str | None
     station_id: int
@@ -171,3 +173,25 @@ class AppointmentTransition(BaseModel):
 class RescheduleRequest(BaseModel):
     slot_start: datetime
     station_id: int | None = None
+
+
+class CheckInRequest(BaseModel):
+    code: str
+
+
+class WaitingListCreate(BaseModel):
+    patient_id: int
+    target_date: datetime
+    appointment_type: AppointmentType = AppointmentType.REVIEW
+
+
+class WaitingListRead(BaseModel):
+    id: int
+    clinic_id: int
+    patient_id: int
+    patient_name: str | None
+    target_date: datetime
+    appointment_type: AppointmentType
+    status: WaitingStatus
+    promoted_appointment_id: int | None
+    created_at: datetime

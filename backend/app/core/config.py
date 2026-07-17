@@ -30,6 +30,10 @@ class Settings(BaseSettings):
     escalation_enabled: bool = True
     escalation_interval_seconds: int = 60
 
+    # Appointment reminders (7d/3d/24h/2h/30m). Same background scheduler.
+    reminders_enabled: bool = True
+    reminder_interval_seconds: int = 300
+
     # Email. If smtp_host is unset, emails are logged (console transport).
     smtp_host: str | None = None
     smtp_port: int = 587

@@ -29,6 +29,22 @@ class LoadBalancing(str, enum.Enum):
     ROUND_ROBIN = "round_robin"
 
 
+class WaitingStatus(str, enum.Enum):
+    WAITING = "waiting"
+    PROMOTED = "promoted"
+    CANCELLED = "cancelled"
+
+
+# Reminder offsets before an appointment (minutes, label), largest first.
+REMINDER_OFFSETS: list[tuple[int, str]] = [
+    (7 * 24 * 60, "7d"),
+    (3 * 24 * 60, "3d"),
+    (24 * 60, "24h"),
+    (2 * 60, "2h"),
+    (30, "30m"),
+]
+
+
 class AppointmentType(str, enum.Enum):
     NEW_PATIENT = "new_patient"
     REVIEW = "review"

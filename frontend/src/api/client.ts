@@ -14,6 +14,7 @@ import type {
   Patient,
   PatientCreate,
   Station,
+  WaitingEntry,
 } from './types'
 
 const BASE = '/api'
@@ -423,6 +424,50 @@ export function rescheduleAppointment(
     method: 'POST',
     body: JSON.stringify({ slot_start: slotStart, station_id: stationId ?? null }),
   })
+}
+
+export function checkInByCode(code: string): Promise<Appointment> {
+  return request<Appointment>('/appointments/check-in', {
+    method: 'POST',
+    body: JSON.stringify({ code }),
+  })
+}
+
+export async function getAppointmentQrSvg(id: number): Promise<string> {
+  const token = getToken()
+  const res = await fetch(`${BASE}/appointments/${id}/qrcode`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  })
+  if (!res.ok) throw new Error('Could not load QR code')
+  return res.text()
+}
+
+// ---- Waiting list ----
+
+export function joinWaitingList(
+  clinicId: number,
+  payload: {
+    patient_id: number
+    target_date: string
+    appointment_type: AppointmentType
+  },
+): Promise<WaitingEntry> {
+  return request<WaitingEntry>(`/clinics/${clinicId}/waiting-list`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function listWaitingList(
+  clinicId: number,
+  date?: string,
+): Promise<WaitingEntry[]> {
+  const qs = date ? `?date=${date}` : ''
+  return request<WaitingEntry[]>(`/clinics/${clinicId}/waiting-list${qs}`)
+}
+
+export function removeWaitingEntry(id: number): Promise<void> {
+  return request<void>(`/waiting-list/${id}`, { method: 'DELETE' })
 }
 
 export function health(): Promise<{ status: string; service: string }> {

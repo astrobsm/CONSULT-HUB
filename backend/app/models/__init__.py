@@ -9,9 +9,11 @@ from app.models.message import ConsultationMessage
 from app.models.notification import Notification
 from app.models.scheduling import (
     Appointment,
+    AppointmentReminder,
     Clinic,
     ConsultationStation,
     SlotHold,
+    WaitingListEntry,
 )
 
 __all__ = [
@@ -29,4 +31,6 @@ __all__ = [
     "ConsultationStation",
     "Appointment",
     "SlotHold",
+    "WaitingListEntry",
+    "AppointmentReminder",
 ]

@@ -630,6 +630,24 @@ a.tile:hover { border-color: var(--primary); text-decoration: none; }
 }
 .filter-row { display: flex; gap: 1rem; flex-wrap: wrap; }
 
+.qr-wrap {
+  display: flex;
+  justify-content: center;
+  margin: 1rem 0;
+}
+.qr-wrap svg { width: 200px; height: 200px; }
+.qr-code { text-align: center; }
+.qr-code code {
+  background: var(--bg);
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+}
+.waitlist-cta { display: flex; align-items: center; gap: 1rem; margin-top: 0.6rem; }
+
+/* Waiting-list status badges */
+.badge--waiting { background: #fef3c7; color: #92400e; }
+.badge--promoted { background: #dcfce7; color: #166534; }
+
 /* Appointment status badges */
 .badge--booked, .badge--confirmed { background: #e0edff; color: #1857ab; }
 .badge--checked_in, .badge--waiting, .badge--called,

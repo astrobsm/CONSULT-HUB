@@ -25,6 +25,7 @@ from app.api.routes import (
 from app.core.config import settings
 from app.core.database import Base, SessionLocal, engine
 from app.core.escalation import run_escalations_job
+from app.services.waiting_reminders import run_reminders_job
 from app.core.realtime import manager as realtime
 from app.core.security import decode_access_token
 from app.models.entities import User
@@ -44,21 +45,28 @@ async def lifespan(_: FastAPI):
     realtime.set_loop(asyncio.get_running_loop())
 
     scheduler: BackgroundScheduler | None = None
-    if settings.escalation_enabled:
+    if settings.escalation_enabled or settings.reminders_enabled:
         scheduler = BackgroundScheduler(timezone="UTC")
-        scheduler.add_job(
-            run_escalations_job,
-            trigger="interval",
-            seconds=settings.escalation_interval_seconds,
-            id="escalation",
-            max_instances=1,
-            coalesce=True,
-        )
+        if settings.escalation_enabled:
+            scheduler.add_job(
+                run_escalations_job,
+                trigger="interval",
+                seconds=settings.escalation_interval_seconds,
+                id="escalation",
+                max_instances=1,
+                coalesce=True,
+            )
+        if settings.reminders_enabled:
+            scheduler.add_job(
+                run_reminders_job,
+                trigger="interval",
+                seconds=settings.reminder_interval_seconds,
+                id="reminders",
+                max_instances=1,
+                coalesce=True,
+            )
         scheduler.start()
-        logger.info(
-            "Escalation scheduler started (every %ss)",
-            settings.escalation_interval_seconds,
-        )
+        logger.info("Background scheduler started")
 
     try:
         yield

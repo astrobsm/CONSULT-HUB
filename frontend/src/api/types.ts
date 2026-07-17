@@ -156,9 +156,22 @@ export interface Availability {
   stations: StationAvailability[]
 }
 
+export interface WaitingEntry {
+  id: number
+  clinic_id: number
+  patient_id: number
+  patient_name: string | null
+  target_date: string
+  appointment_type: AppointmentType
+  status: 'waiting' | 'promoted' | 'cancelled'
+  promoted_appointment_id: number | null
+  created_at: string
+}
+
 export interface Appointment {
   id: number
   appointment_number: string | null
+  check_in_code: string | null
   clinic_id: number
   clinic_name: string | null
   station_id: number

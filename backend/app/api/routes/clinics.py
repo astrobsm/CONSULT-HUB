@@ -10,6 +10,7 @@ from app.core.database import get_db
 from app.crud import scheduling as crud
 from app.models.entities import User
 from app.models.scheduling import Clinic, ConsultationStation
+from app.crud import patient as crud_patient
 from app.schemas.scheduling import (
     AvailabilityRead,
     ClinicCreate,
@@ -19,6 +20,8 @@ from app.schemas.scheduling import (
     StationCreate,
     StationRead,
     StationUpdate,
+    WaitingListCreate,
+    WaitingListRead,
 )
 from app.services.scheduling import station_availability
 
@@ -153,3 +156,69 @@ def availability(
             for r in rows
         ],
     )
+
+
+# ---- Waiting list ----
+
+@router.post(
+    "/clinics/{clinic_id}/waiting-list",
+    response_model=WaitingListRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def join_waiting_list(
+    clinic_id: int,
+    payload: WaitingListCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> WaitingListRead:
+    clinic = _scoped_clinic(clinic_id, db, current_user)
+    patient = crud_patient.get_patient(db, payload.patient_id)
+    if patient is None or (
+        current_user.institution_id is not None
+        and patient.institution_id != current_user.institution_id
+    ):
+        raise HTTPException(
+            status_code=422, detail="Patient not found in your institution"
+        )
+    entry = crud.add_waiting_entry(
+        db,
+        clinic=clinic,
+        patient_id=payload.patient_id,
+        target_date=payload.target_date,
+        appointment_type=payload.appointment_type,
+        added_by_user_id=current_user.id,
+    )
+    return crud.waiting_entry_read(db, entry)
+
+
+@router.get(
+    "/clinics/{clinic_id}/waiting-list",
+    response_model=list[WaitingListRead],
+)
+def list_waiting_list(
+    clinic_id: int,
+    day: date | None = Query(default=None, alias="date"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[WaitingListRead]:
+    _scoped_clinic(clinic_id, db, current_user)
+    entries = crud.list_waiting_entries(db, clinic_id=clinic_id, day=day)
+    return [crud.waiting_entry_read(db, e) for e in entries]
+
+
+@router.delete(
+    "/waiting-list/{entry_id}", status_code=status.HTTP_204_NO_CONTENT
+)
+def remove_waiting_entry(
+    entry_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> None:
+    entry = crud.get_waiting_entry(db, entry_id)
+    if entry is None or (
+        current_user.institution_id is not None
+        and entry.institution_id != current_user.institution_id
+    ):
+        raise HTTPException(status_code=404, detail="Entry not found")
+    db.delete(entry)
+    db.commit()
