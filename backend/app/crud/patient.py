@@ -3,8 +3,44 @@ from __future__ import annotations
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
+from app.core.security import verify_password
 from app.models.entities import Patient
 from app.schemas.patient import PatientCreate
+
+
+def get_patient_by_email(db: Session, email: str) -> Patient | None:
+    """A portal-activated patient with this email (first match)."""
+    return db.scalar(
+        select(Patient)
+        .where(
+            Patient.email == email.lower(),
+            Patient.hashed_password.isnot(None),
+        )
+        .order_by(Patient.id)
+    )
+
+
+def find_for_activation(
+    db: Session, *, hospital_number: str, email: str
+) -> Patient | None:
+    """Match a patient by BOTH hospital number and the email on their record."""
+    return db.scalar(
+        select(Patient).where(
+            Patient.hospital_number == hospital_number,
+            Patient.email == email.lower(),
+        )
+    )
+
+
+def authenticate_patient(
+    db: Session, email: str, password: str
+) -> Patient | None:
+    patient = get_patient_by_email(db, email.lower())
+    if patient is None or not patient.hashed_password:
+        return None
+    if not verify_password(password, patient.hashed_password):
+        return None
+    return patient
 
 
 def create_patient(

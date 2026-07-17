@@ -20,6 +20,7 @@ from app.api.routes import (
     notifications,
     org,
     patients,
+    portal,
     users,
 )
 from app.core.config import settings
@@ -136,3 +137,4 @@ app.include_router(messages.router, prefix=settings.api_prefix)
 app.include_router(fhir.router, prefix=settings.api_prefix)
 app.include_router(clinics.router, prefix=settings.api_prefix)
 app.include_router(appointments.router, prefix=settings.api_prefix)
+app.include_router(portal.router, prefix=settings.api_prefix)

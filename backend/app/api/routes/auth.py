@@ -33,7 +33,12 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 def _issue_token(user: User) -> Token:
     token = create_access_token(
-        user.id, extra={"role": user.role, "inst": user.institution_id}
+        user.id,
+        extra={
+            "typ": "staff",
+            "role": user.role,
+            "inst": user.institution_id,
+        },
     )
     return Token(access_token=token, user=UserRead.model_validate(user))
 
