@@ -74,6 +74,8 @@ export default function LoginPage() {
         </p>
         <p className="muted small login__hint">
           Demo: admin@consulthub.local / consulthub
+          <br />
+          <Link to="/portal/login">Patient portal →</Link>
         </p>
       </div>
     </div>

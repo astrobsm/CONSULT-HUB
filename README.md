@@ -125,6 +125,28 @@ separate.
   trained model; patient reminders need real transports (SMS/WhatsApp) for full
   coverage; a patient self-booking portal (patient login) is not yet built.
 
+### Patient self-service portal
+
+A **separate authentication surface** for patients — they only ever see and act on
+their own data:
+- **Activation:** `POST /api/portal/activate` (matches hospital number **and** the
+  email on the record; always 202) emails a set-password link; `POST
+  /api/portal/set-password` (portal-purpose token only) sets the password;
+  `POST /api/portal/login` issues a patient JWT (`typ="patient"`).
+- **Token separation:** staff tokens carry `typ="staff"` and are rejected by portal
+  endpoints; patient tokens are rejected by every staff endpoint. A patient can
+  never reach staff APIs and vice-versa.
+- **Self-scoped portal:** `GET /portal/me`, `GET /portal/appointments` (own only),
+  `GET /portal/clinics` + `availability` (own institution only), `POST
+  /portal/appointments` (self-book, `patient_id` forced), cancel / reschedule /
+  join-waiting-list. Cross-institution clinics and other patients' appointments
+  return 404.
+- **UI:** a standalone portal at `/portal` (own layout, own login/activation/
+  set-password) — patients book, view, and cancel their own appointments.
+- **Note:** patient login is by email; SMS/WhatsApp channels and online payment are
+  still future. The portal reuses the same booking engine, so no-double-book and
+  load-balancing apply to patient bookings too.
+
 ### Administration & RBAC
 
 - **Self-registration is disabled.** Admins create users via `POST /api/users`;

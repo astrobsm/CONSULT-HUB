@@ -21,14 +21,19 @@ import PatientDetailPage from './pages/PatientDetailPage'
 import LoginPage from './pages/LoginPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import SetPasswordPage from './pages/SetPasswordPage'
+import PortalLoginPage from './portal/PortalLoginPage'
+import PortalActivatePage from './portal/PortalActivatePage'
+import PortalSetPasswordPage from './portal/PortalSetPasswordPage'
+import PortalHomePage from './portal/PortalHomePage'
 
 function Header() {
   const { user, logout } = useAuth()
   const location = useLocation()
 
-  // Pre-auth screens have their own full-page layout.
+  // Pre-auth screens + the whole patient portal have their own layouts.
   const bare = ['/login', '/forgot-password', '/set-password']
   if (bare.includes(location.pathname)) return null
+  if (location.pathname.startsWith('/portal')) return null
 
   return (
     <header className="app__header">
@@ -72,6 +77,13 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/set-password" element={<SetPasswordPage />} />
+          <Route path="/portal/login" element={<PortalLoginPage />} />
+          <Route path="/portal/activate" element={<PortalActivatePage />} />
+          <Route
+            path="/portal/set-password"
+            element={<PortalSetPasswordPage />}
+          />
+          <Route path="/portal" element={<PortalHomePage />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route
             path="/dashboard"
