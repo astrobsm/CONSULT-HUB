@@ -1,0 +1,49 @@
+# ConsultHUB — full stack: PostgreSQL + FastAPI + nginx-served frontend.
+#
+#   docker compose up --build
+#   open http://localhost:8080   (admin@consulthub.local / consulthub)
+#
+# Override secrets via a .env file next to this one (see the `environment` keys).
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: consulthub
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-consulthub}
+      POSTGRES_DB: consulthub
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U consulthub -d consulthub"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://consulthub:${POSTGRES_PASSWORD:-consulthub}@db:5432/consulthub
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
+      FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:8080}
+      SEED_ON_START: ${SEED_ON_START:-true}
+      # Optional integrations (else console fallback):
+      SMTP_HOST: ${SMTP_HOST:-}
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - uploads:/app/uploads
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+
+volumes:
+  db-data:
+  uploads:

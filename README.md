@@ -339,6 +339,32 @@ npm run dev
 
 - App: http://localhost:5173 (proxies `/api` to the backend on :8000)
 
+## Deployment (Docker Compose)
+
+The full production stack — PostgreSQL + FastAPI + an nginx-served frontend — runs
+with one command:
+
+```bash
+docker compose up --build
+# open http://localhost:8080   (admin@consulthub.local / consulthub)
+```
+
+- **db** — PostgreSQL 16 (data persisted in the `db-data` volume).
+- **backend** — the FastAPI image runs `alembic upgrade head` on start, optionally
+  seeds demo data (`SEED_ON_START=true`), then serves with a single Uvicorn worker
+  (so the escalation/reminder schedulers run once). Uploads persist in the
+  `uploads` volume.
+- **frontend** — Vite build served by nginx, which also proxies `/api` (and the
+  `/api/ws` WebSocket) to the backend, so everything is same-origin (no CORS).
+
+Override secrets via a `.env` beside `docker-compose.yml`: at minimum set
+`SECRET_KEY`; optionally `SMTP_*` and `TWILIO_*` for real email/SMS. The images
+are plain `docker build`-able if you deploy without Compose.
+
+> Note: the container images and Compose stack are provided and config-validated,
+> but were **not** built/run in the development environment (no Docker daemon
+> there) — build once in your environment to confirm.
+
 ## Tests
 
 ```bash
