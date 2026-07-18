@@ -42,6 +42,13 @@ class Settings(BaseSettings):
     smtp_from: str = "ConsultHUB <no-reply@consulthub.local>"
     smtp_tls: bool = True
 
+    # SMS / WhatsApp (Twilio). Without credentials, messages log to the console.
+    twilio_account_sid: str | None = None
+    twilio_auth_token: str | None = None
+    twilio_sms_from: str | None = None
+    twilio_whatsapp_from: str | None = None
+    whatsapp_enabled: bool = False
+
     # Attachment storage. Local disk for dev; swap for S3-compatible in prod.
     storage_dir: str = "./uploads"
     max_upload_mb: int = 15

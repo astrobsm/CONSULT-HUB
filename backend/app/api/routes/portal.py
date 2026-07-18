@@ -234,6 +234,15 @@ def self_book(
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     except SchedulingError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+    # Confirmation to the patient's phone, if we have one.
+    if patient.phone:
+        from app.core.sms import send_sms
+
+        send_sms(
+            patient.phone,
+            f"ConsultHUB: appointment {appt.appointment_number} confirmed for "
+            f"{appt.slot_start.strftime('%Y-%m-%d %H:%M')}.",
+        )
     return crud.to_read(db, appt)
 
 

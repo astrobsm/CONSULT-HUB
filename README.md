@@ -311,6 +311,15 @@ their own data:
 - **Dev:** with no SMTP configured, emails (including the reset/invite link) are
   logged to the backend console. Set `SMTP_*` for real delivery and
   `FRONTEND_BASE_URL` for the link host.
+
+### SMS & WhatsApp (Twilio)
+
+- `app/core/sms.py` provides `send_sms` / `send_whatsapp` — real Twilio REST
+  delivery when `TWILIO_ACCOUNT_SID`/`TWILIO_AUTH_TOKEN` (+ from-numbers) are set,
+  otherwise console logging (dev). Best-effort, like email.
+- Patient appointment **reminders** go out by email **and** SMS (and WhatsApp when
+  `WHATSAPP_ENABLED=true`) using the patient's `phone`; portal self-booking sends
+  an SMS confirmation. Staff still get in-app notifications.
 - UI: a "Forgot password?" link on sign-in → Forgot-password page; a public
   Set-password page reads the token from the URL; the Admin > Users form has a
   "send email invite" toggle.
