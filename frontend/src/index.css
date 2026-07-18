@@ -1,3 +1,5 @@
+/* Light theme (default). --primary / --app-font are overridden at runtime by
+   the user's accent + font preferences (inline on the root element). */
 :root {
   --bg: #f5f7fa;
   --surface: #ffffff;
@@ -8,12 +10,24 @@
   --primary-dark: #1857ab;
   --danger: #dc2626;
   --radius: 8px;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --app-font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-family: var(--app-font);
   color: var(--text);
 }
 
+/* Dark theme, defined once and applied both to the explicit toggle and to
+   OS dark (unless the user has forced light). */
+:root[data-theme='dark'] {
+  --bg: #0f151e;
+  --surface: #1a2230;
+  --border: #2b3648;
+  --text: #e6edf5;
+  --muted: #94a3b8;
+  --primary: #4d94ff;
+  --primary-dark: #3d7fe0;
+}
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']) {
     --bg: #0f151e;
     --surface: #1a2230;
     --border: #2b3648;
@@ -26,11 +40,21 @@
 
 * { box-sizing: border-box; }
 
+/* Fluid root font size — scales smoothly across phone → desktop. */
+html {
+  font-size: clamp(15px, 0.9rem + 0.3vw, 17px);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
+  font-family: var(--app-font);
+  overflow-x: hidden; /* never allow the page itself to scroll sideways */
 }
+img { max-width: 100%; }
 
 a { color: var(--primary); text-decoration: none; }
 a:hover { text-decoration: underline; }
@@ -54,12 +78,65 @@ a:hover { text-decoration: underline; }
 }
 .app__brand span { color: var(--primary); }
 .app__brand:hover { text-decoration: none; }
-.app__nav { display: flex; align-items: center; gap: 1.25rem; }
+.app__nav { display: flex; align-items: center; gap: 1.25rem; margin-left: auto; }
+.app__header-actions { display: flex; align-items: center; gap: 0.5rem; order: 3; }
+.nav-toggle {
+  display: none;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 1.15rem;
+  line-height: 1;
+  padding: 0.35rem 0.6rem;
+  cursor: pointer;
+}
+
+/* Mobile header: nav collapses behind a hamburger. */
+@media (max-width: 860px) {
+  .app__nav {
+    order: 4;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.15rem;
+    margin-left: 0;
+    padding: 0.5rem 0.9rem 1rem;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+    display: none;
+  }
+  .app__nav--open { display: flex; }
+  .app__nav > a,
+  .app__nav > .btn {
+    width: 100%;
+    padding: 0.6rem 0.4rem;
+    border-radius: var(--radius);
+  }
+  .app__nav > a:hover { background: var(--bg); text-decoration: none; }
+  .nav-toggle { display: inline-flex; }
+  .user-menu {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    padding-top: 0.6rem;
+    border-top: 1px solid var(--border);
+  }
+  .user-menu__name { flex-direction: row; justify-content: space-between; }
+}
 .app__main {
   max-width: 960px;
   margin: 0 auto;
   padding: 1.75rem 1.5rem 4rem;
+  position: relative;
+  z-index: 1;
 }
+.brand-inline { display: inline-flex; align-items: center; }
 
 .page-head {
   display: flex;
@@ -67,8 +144,9 @@ a:hover { text-decoration: underline; }
   justify-content: space-between;
   margin-bottom: 1.25rem;
 }
-h1 { font-size: 1.5rem; margin: 0; }
-h2 { font-size: 1.05rem; margin: 1.5rem 0 0.75rem; }
+h1 { font-size: clamp(1.35rem, 1.1rem + 1.2vw, 1.75rem); margin: 0; }
+h2 { font-size: clamp(1rem, 0.95rem + 0.4vw, 1.2rem); margin: 1.5rem 0 0.75rem; }
+h3 { font-size: clamp(0.9rem, 0.85rem + 0.3vw, 1.05rem); }
 
 .muted { color: var(--muted); }
 .small { font-size: 0.8rem; }
@@ -210,7 +288,7 @@ h2 { font-size: 1.05rem; margin: 1.5rem 0 0.75rem; }
   --viz-track: #e1e0d9;
 }
 @media (prefers-color-scheme: dark) {
-  .dash {
+  :root:not([data-theme='light']) .dash {
     --viz-seq: #3987e5;
     --viz-track: #2c2c2a;
   }
@@ -500,6 +578,36 @@ a.tile:hover { border-color: var(--primary); text-decoration: none; }
   .success-msg { color: #4ade80; }
 }
 .account-readonly { display: flex; gap: 1.5rem; }
+.accent-swatches { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.35rem; }
+.swatch {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  cursor: pointer;
+  padding: 0;
+}
+.swatch--on { border-color: var(--text); box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--text); }
+
+/* Institution branding */
+.brand-logo { max-height: 40px; max-width: 160px; border-radius: 4px; }
+.brand-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+}
+.app__watermark {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 45% auto;
+  opacity: 0.04;
+  z-index: 0;
+}
+.app__brand-logo { height: 30px; width: auto; vertical-align: middle; margin-right: 0.5rem; }
 .user-menu__role {
   font-weight: 400;
   font-size: 0.72rem;
@@ -778,3 +886,77 @@ a.tile:hover { border-color: var(--primary); text-decoration: none; }
   background: var(--primary); margin-top: 0.35rem; flex-shrink: 0;
 }
 .timeline strong { text-transform: capitalize; font-weight: 600; }
+
+/* ============================================================
+   MOBILE-FIRST RESPONSIVE
+   ============================================================ */
+
+/* Comfortable touch targets on coarse pointers (phones/tablets). */
+@media (pointer: coarse) {
+  .btn,
+  select,
+  input,
+  textarea,
+  .app__nav a,
+  .admin-tab {
+    min-height: 44px;
+  }
+  .btn--sm { min-height: 34px; }
+}
+
+/* Wide tables scroll horizontally instead of breaking the layout. */
+@media (max-width: 720px) {
+  .table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+  }
+}
+
+/* Tablet and below. */
+@media (max-width: 860px) {
+  .dash__cols { grid-template-columns: 1fr; }
+  .detail__grid { grid-template-columns: 1fr; }
+}
+
+/* Phones. */
+@media (max-width: 640px) {
+  .app__main { padding: 1rem 0.9rem 3rem; }
+  .app__header { padding: 0.7rem 0.9rem; }
+
+  .page-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.6rem;
+  }
+  .page-head .btn { width: 100%; text-align: center; }
+
+  .grid { grid-template-columns: 1fr; }
+  .form-actions { flex-direction: column-reverse; }
+  .form-actions .btn { width: 100%; }
+
+  .filter-row { flex-direction: column; align-items: stretch; }
+  .filter,
+  .filter select,
+  .search-bar,
+  .search-bar input { width: 100%; }
+  .search-bar { flex-wrap: wrap; }
+
+  .detail__head { flex-direction: column; align-items: flex-start; gap: 0.6rem; }
+  .modal { padding: 1.1rem; }
+  .login { padding: 1rem; align-items: stretch; }
+  .login__card { max-width: none; }
+
+  .cell-reason { max-width: 180px; white-space: normal; }
+  .chat__bubble { max-width: 90%; }
+  .tiles { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+}
+
+/* Respect users who prefer reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

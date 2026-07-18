@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { changePassword, updateProfile } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
+import { ACCENTS, applyAppearance, FONTS } from '../theme'
 
 export default function AccountPage() {
   const { user, refresh } = useAuth()
@@ -22,6 +23,42 @@ export default function AccountPage() {
     onSuccess: async () => {
       await refresh()
       setProfileMsg('Profile updated.')
+    },
+  })
+
+  // Appearance
+  const [theme, setTheme] = useState('system')
+  const [accent, setAccent] = useState('blue')
+  const [font, setFont] = useState('system')
+  const [apprMsg, setApprMsg] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (user) {
+      setTheme(user.theme)
+      setAccent(user.accent)
+      setFont(user.font_family)
+    }
+  }, [user])
+
+  // Apply live as the user tweaks (before saving).
+  function previewAppearance(next: {
+    theme?: string
+    accent?: string
+    font_family?: string
+  }) {
+    applyAppearance({
+      theme: next.theme ?? theme,
+      accent: next.accent ?? accent,
+      font_family: next.font_family ?? font,
+    })
+  }
+
+  const appearance = useMutation({
+    mutationFn: () =>
+      updateProfile({ theme, accent, font_family: font }),
+    onSuccess: async () => {
+      await refresh()
+      setApprMsg('Appearance saved.')
     },
   })
 
@@ -91,6 +128,74 @@ export default function AccountPage() {
             </button>
           </div>
         </form>
+      </div>
+
+      <div className="panel">
+        <h2>Appearance</h2>
+        <div className="grid">
+          <label className="field">
+            <span>Theme</span>
+            <select
+              value={theme}
+              onChange={(e) => {
+                setTheme(e.target.value)
+                previewAppearance({ theme: e.target.value })
+              }}
+            >
+              <option value="system">System</option>
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+            </select>
+          </label>
+          <label className="field">
+            <span>Font</span>
+            <select
+              value={font}
+              onChange={(e) => {
+                setFont(e.target.value)
+                previewAppearance({ font_family: e.target.value })
+              }}
+            >
+              {Object.keys(FONTS).map((f) => (
+                <option key={f} value={f}>
+                  {f}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <div className="field">
+          <span>Accent colour</span>
+          <div className="accent-swatches">
+            {Object.entries(ACCENTS).map(([name, c]) => (
+              <button
+                key={name}
+                type="button"
+                className={`swatch ${accent === name ? 'swatch--on' : ''}`}
+                style={{ background: c.primary }}
+                title={name}
+                aria-label={name}
+                onClick={() => {
+                  setAccent(name)
+                  previewAppearance({ accent: name })
+                }}
+              />
+            ))}
+          </div>
+        </div>
+        {apprMsg && <p className="success-msg">{apprMsg}</p>}
+        <div className="form-actions">
+          <button
+            className="btn btn--primary"
+            disabled={appearance.isPending}
+            onClick={() => {
+              setApprMsg(null)
+              appearance.mutate()
+            }}
+          >
+            {appearance.isPending ? 'Saving…' : 'Save appearance'}
+          </button>
+        </div>
       </div>
 
       <div className="panel">

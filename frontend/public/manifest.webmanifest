@@ -1,0 +1,25 @@
+{
+  "name": "ConsultHUB",
+  "short_name": "ConsultHUB",
+  "description": "Intelligent multidisciplinary consultation & clinic appointment platform.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0f151e",
+  "theme_color": "#1e6fd9",
+  "icons": [
+    {
+      "src": "/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/app-icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

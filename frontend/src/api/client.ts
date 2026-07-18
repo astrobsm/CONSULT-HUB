@@ -217,6 +217,71 @@ export interface Department {
   specialty: string | null
 }
 
+export interface Institution {
+  id: number
+  name: string
+  code: string
+  motto: string | null
+  address: string | null
+  phone: string | null
+  email: string | null
+  website: string | null
+  primary_color: string | null
+  has_logo: boolean
+  has_watermark: boolean
+  created_at: string
+}
+
+export function listInstitutions(): Promise<Institution[]> {
+  return request<Institution[]>('/institutions')
+}
+export function getInstitution(id: number): Promise<Institution> {
+  return request<Institution>(`/institutions/${id}`)
+}
+export function updateInstitution(
+  id: number,
+  payload: Partial<Institution>,
+): Promise<Institution> {
+  return request<Institution>(`/institutions/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+export async function uploadBrandImage(
+  id: number,
+  kind: 'logo' | 'watermark',
+  file: File,
+): Promise<Institution> {
+  const form = new FormData()
+  form.append('file', file)
+  const token = getToken()
+  const res = await fetch(`${BASE}/institutions/${id}/${kind}`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: form,
+  })
+  if (!res.ok) {
+    const detail = await res
+      .json()
+      .then((b) => b.detail)
+      .catch(() => 'Upload failed')
+    throw new Error(detail ?? 'Upload failed')
+  }
+  return res.json() as Promise<Institution>
+}
+/** Authenticated fetch of a brand image as an object URL (or null). */
+export async function brandImageUrl(
+  id: number,
+  kind: 'logo' | 'watermark',
+): Promise<string | null> {
+  const token = getToken()
+  const res = await fetch(`${BASE}/institutions/${id}/${kind}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  })
+  if (!res.ok) return null
+  return URL.createObjectURL(await res.blob())
+}
+
 export function listDepartments(): Promise<Department[]> {
   return request<Department[]>('/departments')
 }
@@ -514,6 +579,9 @@ export interface AuthUser {
   institution_id: number | null
   department_id: number | null
   is_active: boolean
+  theme: string
+  accent: string
+  font_family: string
   created_at: string
 }
 
@@ -558,6 +626,9 @@ export function fetchMe(): Promise<AuthUser> {
 export function updateProfile(payload: {
   full_name?: string
   designation?: string | null
+  theme?: string
+  accent?: string
+  font_family?: string
 }): Promise<AuthUser> {
   return request<AuthUser>('/auth/me', {
     method: 'PATCH',

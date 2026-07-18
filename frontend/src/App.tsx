@@ -1,3 +1,4 @@
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { useAuth } from './auth/AuthContext'
 import RequireAuth from './auth/RequireAuth'
@@ -5,59 +6,114 @@ import RequireAdmin from './auth/RequireAdmin'
 import { isAdminRole } from './api/client'
 import NotificationBell from './components/NotificationBell'
 import RealtimeBridge from './realtime/RealtimeBridge'
-import AdminUsersPage from './pages/AdminUsersPage'
-import AdminDepartmentsPage from './pages/AdminDepartmentsPage'
-import AdminClinicsPage from './pages/AdminClinicsPage'
-import AppointmentsPage from './pages/AppointmentsPage'
-import AnalyticsPage from './pages/AnalyticsPage'
-import AccountPage from './pages/AccountPage'
-import DashboardPage from './pages/DashboardPage'
-import ConsultationsListPage from './pages/ConsultationsListPage'
-import ConsultationCreatePage from './pages/ConsultationCreatePage'
-import ConsultationDetailPage from './pages/ConsultationDetailPage'
-import PatientsListPage from './pages/PatientsListPage'
-import PatientCreatePage from './pages/PatientCreatePage'
-import PatientDetailPage from './pages/PatientDetailPage'
-import LoginPage from './pages/LoginPage'
-import ForgotPasswordPage from './pages/ForgotPasswordPage'
-import SetPasswordPage from './pages/SetPasswordPage'
-import PortalLoginPage from './portal/PortalLoginPage'
-import PortalActivatePage from './portal/PortalActivatePage'
-import PortalSetPasswordPage from './portal/PortalSetPasswordPage'
-import PortalHomePage from './portal/PortalHomePage'
+import Branding, { BrandHeader } from './components/Branding'
+
+// Route pages are code-split so the initial download is small — important on
+// slow connections. Each page loads on demand behind a Suspense fallback.
+const AdminUsersPage = lazy(() => import('./pages/AdminUsersPage'))
+const AdminDepartmentsPage = lazy(() => import('./pages/AdminDepartmentsPage'))
+const AdminClinicsPage = lazy(() => import('./pages/AdminClinicsPage'))
+const AdminInstitutionPage = lazy(() => import('./pages/AdminInstitutionPage'))
+const AppointmentsPage = lazy(() => import('./pages/AppointmentsPage'))
+const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'))
+const AccountPage = lazy(() => import('./pages/AccountPage'))
+const DashboardPage = lazy(() => import('./pages/DashboardPage'))
+const ConsultationsListPage = lazy(
+  () => import('./pages/ConsultationsListPage'),
+)
+const ConsultationCreatePage = lazy(
+  () => import('./pages/ConsultationCreatePage'),
+)
+const ConsultationDetailPage = lazy(
+  () => import('./pages/ConsultationDetailPage'),
+)
+const PatientsListPage = lazy(() => import('./pages/PatientsListPage'))
+const PatientCreatePage = lazy(() => import('./pages/PatientCreatePage'))
+const PatientDetailPage = lazy(() => import('./pages/PatientDetailPage'))
+const LoginPage = lazy(() => import('./pages/LoginPage'))
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'))
+const SetPasswordPage = lazy(() => import('./pages/SetPasswordPage'))
+const PortalLoginPage = lazy(() => import('./portal/PortalLoginPage'))
+const PortalActivatePage = lazy(() => import('./portal/PortalActivatePage'))
+const PortalSetPasswordPage = lazy(
+  () => import('./portal/PortalSetPasswordPage'),
+)
+const PortalHomePage = lazy(() => import('./portal/PortalHomePage'))
 
 function Header() {
   const { user, logout } = useAuth()
   const location = useLocation()
+  const [open, setOpen] = useState(false)
+
+  // Close the mobile menu whenever the route changes.
+  useEffect(() => setOpen(false), [location.pathname])
 
   // Pre-auth screens + the whole patient portal have their own layouts.
   const bare = ['/login', '/forgot-password', '/set-password']
   if (bare.includes(location.pathname)) return null
   if (location.pathname.startsWith('/portal')) return null
 
+  const close = () => setOpen(false)
+
   return (
     <header className="app__header">
-      <Link to="/consultations" className="app__brand">
-        Consult<span>HUB</span>
+      <Link to="/dashboard" className="app__brand">
+        <BrandHeader />
       </Link>
-      <nav className="app__nav">
-        <Link to="/dashboard">Dashboard</Link>
-        <Link to="/consultations">Consultations</Link>
-        <Link to="/appointments">Appointments</Link>
-        <Link to="/analytics">Analytics</Link>
-        <Link to="/patients">Patients</Link>
-        {isAdminRole(user?.role) && <Link to="/admin/users">Admin</Link>}
-        <Link to="/consultations/new" className="btn btn--primary">
+
+      <div className="app__header-actions">
+        {user && <NotificationBell />}
+        <button
+          className="nav-toggle"
+          aria-label="Menu"
+          aria-expanded={open}
+          onClick={() => setOpen((o) => !o)}
+        >
+          {open ? '✕' : '☰'}
+        </button>
+      </div>
+
+      <nav className={`app__nav ${open ? 'app__nav--open' : ''}`}>
+        <Link to="/dashboard" onClick={close}>
+          Dashboard
+        </Link>
+        <Link to="/consultations" onClick={close}>
+          Consultations
+        </Link>
+        <Link to="/appointments" onClick={close}>
+          Appointments
+        </Link>
+        <Link to="/analytics" onClick={close}>
+          Analytics
+        </Link>
+        <Link to="/patients" onClick={close}>
+          Patients
+        </Link>
+        {isAdminRole(user?.role) && (
+          <Link to="/admin/users" onClick={close}>
+            Admin
+          </Link>
+        )}
+        <Link
+          to="/consultations/new"
+          className="btn btn--primary"
+          onClick={close}
+        >
           + New consult
         </Link>
         {user && (
           <div className="user-menu">
-            <NotificationBell />
-            <Link to="/account" className="user-menu__name">
+            <Link to="/account" className="user-menu__name" onClick={close}>
               {user.full_name}
               <span className="user-menu__role">{user.role}</span>
             </Link>
-            <button className="btn" onClick={logout}>
+            <button
+              className="btn"
+              onClick={() => {
+                close()
+                logout()
+              }}
+            >
               Sign out
             </button>
           </div>
@@ -71,8 +127,10 @@ export default function App() {
   return (
     <div className="app">
       <RealtimeBridge />
+      <Branding />
       <Header />
       <main className="app__main">
+        <Suspense fallback={<p className="muted center">Loading…</p>}>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -170,6 +228,14 @@ export default function App() {
             }
           />
           <Route
+            path="/admin/institution"
+            element={
+              <RequireAdmin>
+                <AdminInstitutionPage />
+              </RequireAdmin>
+            }
+          />
+          <Route
             path="/appointments"
             element={
               <RequireAuth>
@@ -194,6 +260,7 @@ export default function App() {
             }
           />
         </Routes>
+        </Suspense>
       </main>
     </div>
   )

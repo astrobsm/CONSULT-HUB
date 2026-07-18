@@ -14,6 +14,8 @@ import {
   logout as apiLogout,
   type AuthUser,
 } from '../api/client'
+import { applyAppearance } from '../theme'
+import { clearApiCache } from '../registerSW'
 
 interface AuthContextValue {
   user: AuthUser | null
@@ -53,6 +55,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       window.removeEventListener('consulthub:unauthorized', onUnauthorized)
   }, [])
 
+  // Apply the signed-in user's appearance preferences.
+  useEffect(() => {
+    if (user) {
+      applyAppearance({
+        theme: user.theme,
+        accent: user.accent,
+        font_family: user.font_family,
+      })
+    }
+  }, [user])
+
   const login = useCallback(async (email: string, password: string) => {
     const u = await apiLogin(email, password)
     setUser(u)
@@ -60,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     apiLogout()
+    clearApiCache()
     setUser(null)
   }, [])
 

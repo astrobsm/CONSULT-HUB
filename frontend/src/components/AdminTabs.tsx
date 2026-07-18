@@ -27,6 +27,14 @@ export default function AdminTabs() {
       >
         Clinics
       </NavLink>
+      <NavLink
+        to="/admin/institution"
+        className={({ isActive }) =>
+          `admin-tab ${isActive ? 'admin-tab--active' : ''}`
+        }
+      >
+        Institution
+      </NavLink>
     </nav>
   )
 }
