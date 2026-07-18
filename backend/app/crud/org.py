@@ -8,7 +8,35 @@ from app.schemas.org import (
     DepartmentCreate,
     DepartmentUpdate,
     InstitutionCreate,
+    InstitutionUpdate,
 )
+
+
+def institution_read(inst: Institution) -> dict:
+    return {
+        "id": inst.id,
+        "name": inst.name,
+        "code": inst.code,
+        "motto": inst.motto,
+        "address": inst.address,
+        "phone": inst.phone,
+        "email": inst.email,
+        "website": inst.website,
+        "primary_color": inst.primary_color,
+        "has_logo": bool(inst.logo_key),
+        "has_watermark": bool(inst.watermark_key),
+        "created_at": inst.created_at,
+    }
+
+
+def update_institution(
+    db: Session, inst: Institution, payload: InstitutionUpdate
+) -> Institution:
+    for field, value in payload.model_dump(exclude_unset=True).items():
+        setattr(inst, field, value)
+    db.commit()
+    db.refresh(inst)
+    return inst
 
 
 # ---- Institutions ----

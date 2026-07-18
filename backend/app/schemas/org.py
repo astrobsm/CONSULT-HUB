@@ -10,12 +10,30 @@ class InstitutionCreate(BaseModel):
     code: str = Field(min_length=1, max_length=50)
 
 
+class InstitutionUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=200)
+    motto: str | None = None
+    address: str | None = None
+    phone: str | None = None
+    email: str | None = None
+    website: str | None = None
+    primary_color: str | None = None
+
+
 class InstitutionRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
     name: str
     code: str
+    motto: str | None = None
+    address: str | None = None
+    phone: str | None = None
+    email: str | None = None
+    website: str | None = None
+    primary_color: str | None = None
+    has_logo: bool = False
+    has_watermark: bool = False
     created_at: datetime
 
 

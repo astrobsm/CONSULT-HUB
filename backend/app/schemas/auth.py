@@ -8,6 +8,9 @@ from pydantic import BaseModel, ConfigDict, Field
 class ProfileUpdate(BaseModel):
     full_name: str | None = Field(default=None, min_length=1, max_length=150)
     designation: str | None = None
+    theme: str | None = None  # system | light | dark
+    accent: str | None = None
+    font_family: str | None = None
 
 
 class ChangePassword(BaseModel):
@@ -35,6 +38,9 @@ class UserRead(BaseModel):
     institution_id: int | None
     department_id: int | None
     is_active: bool
+    theme: str
+    accent: str
+    font_family: str
     created_at: datetime
 
 

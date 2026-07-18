@@ -20,6 +20,17 @@ class Institution(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(200))
     code: Mapped[str] = mapped_column(String(50), unique=True)
+    # Branding.
+    motto: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    address: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    phone: Mapped[str | None] = mapped_column(String(60), nullable=True)
+    email: Mapped[str | None] = mapped_column(String(150), nullable=True)
+    website: Mapped[str | None] = mapped_column(String(150), nullable=True)
+    primary_color: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    logo_key: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    watermark_key: Mapped[str | None] = mapped_column(
+        String(120), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(default=utcnow)
 
     departments: Mapped[list[Department]] = relationship(
@@ -58,6 +69,16 @@ class User(Base):
     designation: Mapped[str | None] = mapped_column(String(100), nullable=True)
     role: Mapped[str] = mapped_column(String(50), default="registrar")
     is_active: Mapped[bool] = mapped_column(default=True)
+    # Appearance preferences.
+    theme: Mapped[str] = mapped_column(
+        String(10), default="system", server_default="system"
+    )
+    accent: Mapped[str] = mapped_column(
+        String(20), default="blue", server_default="blue"
+    )
+    font_family: Mapped[str] = mapped_column(
+        String(20), default="system", server_default="system"
+    )
     created_at: Mapped[datetime] = mapped_column(default=utcnow)
 
 
