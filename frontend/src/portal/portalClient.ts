@@ -1,4 +1,5 @@
 import type { Appointment, Availability, Clinic } from '../api/types'
+import { enqueue, OfflineQueued } from '../offline/queue'
 
 const BASE = '/api'
 const PKEY = 'consulthub_patient_token'
@@ -104,20 +105,63 @@ export function portalAvailability(
 export function portalMyAppointments(): Promise<Appointment[]> {
   return preq<Appointment[]>('/portal/appointments')
 }
+/** A patient mutation that queues offline and replays on reconnect. */
+async function queuedMutate<T>(
+  path: string,
+  body: string | undefined,
+  label: string,
+): Promise<T> {
+  const token = getPatientToken()
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  }
+  if (token) headers.Authorization = `Bearer ${token}`
+  let res: Response
+  try {
+    res = await fetch(`${BASE}${path}`, { method: 'POST', headers, body })
+  } catch {
+    // Network unreachable — queue it and let the user know.
+    await enqueue({
+      channel: 'patient',
+      method: 'POST',
+      url: `${BASE}${path}`,
+      body,
+      label,
+      createdAt: Date.now(),
+    })
+    throw new OfflineQueued()
+  }
+  if (res.status === 401) {
+    setPatientToken(null)
+    throw new Error('Session expired. Please sign in again.')
+  }
+  if (!res.ok) {
+    const detail = await res
+      .json()
+      .then((b) => b.detail)
+      .catch(() => res.statusText)
+    throw new Error(detail ?? 'Request failed')
+  }
+  return res.json() as Promise<T>
+}
+
 export function portalBook(payload: {
   clinic_id: number
   slot_start: string
   appointment_type: string
 }): Promise<Appointment> {
-  return preq<Appointment>('/portal/appointments', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  })
+  return queuedMutate<Appointment>(
+    '/portal/appointments',
+    JSON.stringify(payload),
+    'Book appointment',
+  )
 }
 export function portalCancel(id: number): Promise<Appointment> {
-  return preq<Appointment>(`/portal/appointments/${id}/cancel`, {
-    method: 'POST',
-  })
+  return queuedMutate<Appointment>(
+    `/portal/appointments/${id}/cancel`,
+    undefined,
+    'Cancel appointment',
+  )
 }
 export function portalLogout() {
   setPatientToken(null)

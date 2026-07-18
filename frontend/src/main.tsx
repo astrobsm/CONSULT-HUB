@@ -6,11 +6,13 @@ import App from './App.tsx'
 import { AuthProvider } from './auth/AuthContext'
 import { applyAppearance, loadStoredAppearance } from './theme'
 import { registerServiceWorker } from './registerSW'
+import { setupOfflineSync } from './offline/queue'
 import './index.css'
 
 // Apply the saved appearance immediately (before render) to avoid a flash.
 applyAppearance(loadStoredAppearance())
 registerServiceWorker()
+setupOfflineSync()
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { refetchOnWindowFocus: false } },

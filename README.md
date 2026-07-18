@@ -339,6 +339,26 @@ npm run dev
 
 - App: http://localhost:5173 (proxies `/api` to the backend on :8000)
 
+## Mobile-first PWA & offline
+
+The frontend is a mobile-first, installable PWA (manifest + PNG icons + service
+worker), built to keep working on poor connections:
+
+- **Responsive**: fluid typography, a hamburger nav on small screens, horizontally
+  scrolling tables, and adaptive grids/forms.
+- **Offline reads**: the service worker serves a cached app shell + assets and
+  falls back to cached API responses (network-first, 3.5s timeout).
+- **Offline writes**: patient-portal bookings/cancellations made offline are queued
+  in IndexedDB and **replayed automatically on reconnect** (via `online`, on load, a
+  30s fallback, and the service worker's Background Sync nudging open clients). A
+  banner shows the offline state + queued count; the auth token is read fresh at
+  replay time. (Replay runs in an open tab — closed-app sync isn't wired since the
+  token lives in the page, not the worker.)
+- **Speed**: route pages are code-split, so first load is small.
+
+The service worker only runs in a production build (`npm run build && npm run
+preview`, or the Docker frontend image) — not in the dev server.
+
 ## Deployment (Docker Compose)
 
 The full production stack — PostgreSQL + FastAPI + an nginx-served frontend — runs

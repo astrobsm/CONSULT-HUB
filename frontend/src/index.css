@@ -960,3 +960,22 @@ a.tile:hover { border-color: var(--primary); text-decoration: none; }
     transition-duration: 0.001ms !important;
   }
 }
+
+/* Offline / sync indicator */
+.offline-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  display: flex;
+  gap: 1.2rem;
+  justify-content: center;
+  align-items: center;
+  padding: 0.45rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #fff;
+  background: #92400e; /* amber = offline */
+}
+.offline-bar--sync { background: var(--primary-dark, #1857ab); }

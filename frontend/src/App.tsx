@@ -7,6 +7,7 @@ import { isAdminRole } from './api/client'
 import NotificationBell from './components/NotificationBell'
 import RealtimeBridge from './realtime/RealtimeBridge'
 import Branding, { BrandHeader } from './components/Branding'
+import OfflineIndicator from './offline/OfflineIndicator'
 
 // Route pages are code-split so the initial download is small — important on
 // slow connections. Each page loads on demand behind a Suspense fallback.
@@ -128,6 +129,7 @@ export default function App() {
     <div className="app">
       <RealtimeBridge />
       <Branding />
+      <OfflineIndicator />
       <Header />
       <main className="app__main">
         <Suspense fallback={<p className="muted center">Loading…</p>}>

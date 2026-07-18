@@ -38,6 +38,21 @@ self.addEventListener('message', (event) => {
   if (event.data === 'clear-api-cache') caches.delete(API)
 })
 
+// Background Sync: when connectivity returns, nudge open clients to replay the
+// offline write-queue (the auth token lives in the page, not the worker).
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'flush-queue') {
+    event.waitUntil(
+      (async () => {
+        const clients = await self.clients.matchAll({
+          includeUncontrolled: true,
+        })
+        clients.forEach((c) => c.postMessage('flush-queue'))
+      })(),
+    )
+  }
+})
+
 function withTimeout(promise, ms) {
   return new Promise((resolve, reject) => {
     const t = setTimeout(() => reject(new Error('timeout')), ms)

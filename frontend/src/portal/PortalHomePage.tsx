@@ -11,6 +11,7 @@ import {
   portalMyAppointments,
   PortalUnauthorized,
 } from './portalClient'
+import { OfflineQueued } from '../offline/queue'
 
 function todayIso(): string {
   const d = new Date()
@@ -53,6 +54,11 @@ export default function PortalHomePage() {
     mutationFn: (id: number) => portalCancel(id),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ['portal', 'appointments'] }),
+    onError: (e) => {
+      // Offline cancellations are queued (the offline banner shows them);
+      // surface anything else.
+      if (!(e instanceof OfflineQueued)) alert((e as Error).message)
+    },
   })
 
   if (me.isLoading) return <p className="muted center">Loading…</p>
@@ -179,7 +185,12 @@ function BookPanel({ onBooked }: { onBooked: () => void }) {
       onBooked()
     },
     onError: (e) => {
-      setError((e as Error).message)
+      if (e instanceof OfflineQueued) {
+        setMsg(e.message) // queued offline — will sync on reconnect
+        setError(null)
+      } else {
+        setError((e as Error).message)
+      }
       availability.refetch()
     },
   })
