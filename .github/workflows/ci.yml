@@ -42,3 +42,45 @@ jobs:
         run: npm ci
       - name: Build
         run: npm run build
+
+  docker:
+    name: Docker stack (build + run + smoke test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and start the full stack
+        run: docker compose up -d --build
+      - name: Wait for the app to become healthy
+        run: |
+          for i in $(seq 1 40); do
+            if curl -sf http://localhost:8080/api/health > /dev/null; then
+              echo "stack healthy"; exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::app did not become healthy"
+          docker compose ps
+          docker compose logs --tail=150
+          exit 1
+      - name: Smoke-test the running stack
+        run: |
+          set -e
+          # SPA shell served by nginx
+          curl -sf http://localhost:8080/ | grep -q "ConsultHUB"
+          # API reachable through the nginx proxy (same origin)
+          curl -sf http://localhost:8080/api/health | grep -q '"status":"ok"'
+          # PWA assets served
+          curl -sf -o /dev/null http://localhost:8080/manifest.webmanifest
+          curl -sf -o /dev/null http://localhost:8080/sw.js
+          # Seeded login works (migrations ran + data seeded on start)
+          curl -sf -X POST http://localhost:8080/api/auth/login \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            --data-urlencode "username=admin@consulthub.local" \
+            --data-urlencode "password=consulthub" | grep -q access_token
+          echo "smoke tests passed"
+      - name: Logs on failure
+        if: failure()
+        run: docker compose logs --tail=200
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
