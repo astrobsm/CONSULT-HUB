@@ -362,24 +362,31 @@ preview`, or the Docker frontend image) — not in the dev server.
 ## Deployment (Docker Compose)
 
 The full production stack — PostgreSQL + FastAPI + an nginx-served frontend — runs
-with one command:
+with one command, but `SECRET_KEY` is **required** first (no insecure default):
 
 ```bash
+cp .env.example .env
+# edit .env: set SECRET_KEY (python -c "import secrets; print(secrets.token_urlsafe(48))")
+# for a local demo also set SEED_ON_START=true to get the seeded logins
 docker compose up --build
-# open http://localhost:8080   (admin@consulthub.local / consulthub)
+# open http://localhost:8080
 ```
 
 - **db** — PostgreSQL 16 (data persisted in the `db-data` volume).
 - **backend** — the FastAPI image runs `alembic upgrade head` on start, optionally
-  seeds demo data (`SEED_ON_START=true`), then serves with a single Uvicorn worker
-  (so the escalation/reminder schedulers run once). Uploads persist in the
-  `uploads` volume.
+  seeds demo data (`SEED_ON_START=true`, **off by default** — the seeded accounts
+  share a known password, so only enable it for local demos), then serves with a
+  single Uvicorn worker (so the escalation/reminder schedulers run once). Runs as
+  an unprivileged user; uploads persist in the `uploads` volume.
 - **frontend** — Vite build served by nginx, which also proxies `/api` (and the
   `/api/ws` WebSocket) to the backend, so everything is same-origin (no CORS).
+  nginx adds CSP / `X-Frame-Options` / `nosniff` headers and rate-limits the
+  login / activation / reset endpoints.
 
-Override secrets via a `.env` beside `docker-compose.yml`: at minimum set
-`SECRET_KEY`; optionally `SMTP_*` and `TWILIO_*` for real email/SMS. The images
-are plain `docker build`-able if you deploy without Compose.
+Configure via `.env` beside `docker-compose.yml` (see `.env.example`): `SECRET_KEY`
+is mandatory; `SEED_ON_START`, `DEBUG`, `SMTP_*` and `TWILIO_*` are optional. Keep
+`DEBUG=false` in production — it keeps reset/invite tokens and patient PII out of
+the console-transport logs. The images are plain `docker build`-able too.
 
 > Note: the container images and Compose stack are provided and config-validated,
 > but were **not** built/run in the development environment (no Docker daemon

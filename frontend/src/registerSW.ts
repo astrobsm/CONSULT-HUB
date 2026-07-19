@@ -9,7 +9,28 @@ export function registerServiceWorker() {
   })
 }
 
-/** Drop cached API responses (call on sign-out so the next user starts clean). */
+/**
+ * Drop cached API responses. MUST be called on every sign-in and sign-out (both
+ * staff and patient) and on token expiry, so one user's cached PHI can never be
+ * served to the next person on a shared device.
+ *
+ * We delete the caches directly from the page (reliable even when no service
+ * worker controls the page yet) AND message the SW as a belt-and-braces signal.
+ */
 export function clearApiCache() {
   navigator.serviceWorker?.controller?.postMessage('clear-api-cache')
+  if ('caches' in window) {
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(
+          keys
+            .filter((k) => k.includes('api'))
+            .map((k) => caches.delete(k)),
+        ),
+      )
+      .catch(() => {
+        /* cache API unavailable — nothing to clear */
+      })
+  }
 }

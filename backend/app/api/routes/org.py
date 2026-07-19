@@ -112,6 +112,23 @@ def update_institution(
     return crud.institution_read(crud.update_institution(db, inst, payload))
 
 
+# Allow-list of raster image types, identified by real content (magic bytes),
+# never by the client-supplied Content-Type header or filename extension. SVG is
+# deliberately excluded: it can carry <script> and would be a stored-XSS vector
+# when served inline from our origin.
+def _sniff_image(data: bytes) -> tuple[str, str] | None:
+    """Return (media_type, extension) for a recognised raster image, else None."""
+    if data.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png", "png"
+    if data.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg", "jpg"
+    if data[:6] in (b"GIF87a", b"GIF89a"):
+        return "image/gif", "gif"
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return "image/webp", "webp"
+    return None
+
+
 def _upload_brand_image(
     inst: Institution, file: UploadFile, kind: str, db: Session
 ) -> None:
@@ -121,9 +138,16 @@ def _upload_brand_image(
         raise HTTPException(status_code=400, detail="Empty file")
     if len(data) > max_bytes:
         raise HTTPException(status_code=413, detail="File too large")
-    if not (file.content_type or "").startswith("image/"):
-        raise HTTPException(status_code=422, detail="Must be an image")
-    key = storage.new_key(file.filename or f"{kind}.png")
+    sniffed = _sniff_image(data)
+    if sniffed is None:
+        raise HTTPException(
+            status_code=422,
+            detail="Must be a PNG, JPEG, GIF, or WebP image",
+        )
+    _, ext = sniffed
+    # Store under a server-controlled name with the sniffed extension, so the
+    # served media type can never be steered by the uploaded filename.
+    key = storage.new_key(f"{kind}.{ext}")
     storage.save(key, data)
     if kind == "logo":
         if inst.logo_key:
@@ -178,7 +202,9 @@ def get_logo(
     if not path.exists():
         raise HTTPException(status_code=404, detail="Logo missing")
     media = mimetypes.guess_type(inst.logo_key)[0] or "image/png"
-    return FileResponse(path, media_type=media)
+    return FileResponse(
+        path, media_type=media, headers={"X-Content-Type-Options": "nosniff"}
+    )
 
 
 @router.get("/institutions/{institution_id}/watermark")
@@ -194,7 +220,9 @@ def get_watermark(
     if not path.exists():
         raise HTTPException(status_code=404, detail="Watermark missing")
     media = mimetypes.guess_type(inst.watermark_key)[0] or "image/png"
-    return FileResponse(path, media_type=media)
+    return FileResponse(
+        path, media_type=media, headers={"X-Content-Type-Options": "nosniff"}
+    )
 
 
 # ---- Departments ----

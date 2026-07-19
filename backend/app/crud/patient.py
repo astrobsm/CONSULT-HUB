@@ -20,6 +20,23 @@ def get_patient_by_email(db: Session, email: str) -> Patient | None:
     )
 
 
+def other_activated_with_email(
+    db: Session, *, email: str, exclude_patient_id: int
+) -> Patient | None:
+    """Another portal-activated patient already using this login email.
+
+    Portal login is by email, so two activated patients sharing an email would
+    be ambiguous (login always resolves to the lowest id). Reject the second.
+    """
+    return db.scalar(
+        select(Patient).where(
+            Patient.email == email.lower(),
+            Patient.hashed_password.isnot(None),
+            Patient.id != exclude_patient_id,
+        )
+    )
+
+
 def find_for_activation(
     db: Session, *, hospital_number: str, email: str
 ) -> Patient | None:

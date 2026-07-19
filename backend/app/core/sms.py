@@ -18,6 +18,22 @@ logger = logging.getLogger("consulthub.sms")
 _TWILIO_URL = "https://api.twilio.com/2010-04-01/Accounts/{sid}/Messages.json"
 
 
+def _mask(number: str) -> str:
+    """Redact a phone number for logs: '+2348012345678' -> '+234****5678'."""
+    if len(number) <= 8:
+        return "****"
+    return f"{number[:4]}****{number[-4:]}"
+
+
+def _log_console(kind: str, to: str, body: str) -> None:
+    if settings.debug:
+        logger.warning("%s (console, no Twilio) to=%s | %s", kind, to, body)
+    else:
+        logger.warning(
+            "%s (console, no Twilio) to=%s [body redacted]", kind, _mask(to)
+        )
+
+
 def _twilio_configured() -> bool:
     return bool(
         settings.twilio_account_sid and settings.twilio_auth_token
@@ -48,7 +64,7 @@ def send_sms(to: str | None, body: str) -> bool:
         return False
     if _twilio_configured():
         return _send_twilio(settings.twilio_sms_from, to, body)
-    logger.warning("SMS (console, no Twilio) to=%s | %s", to, body)
+    _log_console("SMS", to, body)
     return True
 
 
@@ -58,5 +74,5 @@ def send_whatsapp(to: str | None, body: str) -> bool:
     target = to if to.startswith("whatsapp:") else f"whatsapp:{to}"
     if _twilio_configured():
         return _send_twilio(settings.twilio_whatsapp_from, target, body)
-    logger.warning("WHATSAPP (console, no Twilio) to=%s | %s", target, body)
+    _log_console("WHATSAPP", target, body)
     return True

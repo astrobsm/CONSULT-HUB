@@ -15,6 +15,7 @@ from app.core.security import (
     create_purpose_token,
     decode_purpose_token,
     hash_password,
+    token_is_current,
     verify_password,
 )
 from app.crud import user as crud_user
@@ -36,6 +37,7 @@ def _issue_token(user: User) -> Token:
         user.id,
         extra={
             "typ": "staff",
+            "tv": user.token_version,
             "role": user.role,
             "inst": user.institution_id,
         },
@@ -96,6 +98,7 @@ def change_password(
             detail="Current password is incorrect",
         )
     current_user.hashed_password = hash_password(payload.new_password)
+    current_user.token_version += 1  # invalidate outstanding sessions
     db.commit()
 
 
@@ -113,7 +116,10 @@ def request_password_reset(
     user = crud_user.get_user_by_email(db, payload.email.strip().lower())
     if user and user.is_active:
         token = create_purpose_token(
-            user.id, "reset", settings.reset_token_expire_minutes
+            user.id,
+            "reset",
+            settings.reset_token_expire_minutes,
+            token_version=user.token_version,
         )
         send_email(
             user.email,
@@ -133,18 +139,27 @@ def confirm_password_reset(
 ) -> None:
     # Accepts both reset and invite tokens (both set a password).
     try:
-        user_id = decode_purpose_token(payload.token, {"reset", "invite"})
+        token_payload = decode_purpose_token(payload.token, {"reset", "invite"})
+        user_id = int(token_payload["sub"])
     except (jwt.PyJWTError, ValueError, TypeError, KeyError):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid or expired token",
         )
     user = crud_user.get_user(db, user_id)
-    if user is None:
+    # Reject a token already consumed / superseded by a later password change.
+    if user is None or not token_is_current(
+        token_payload, user.token_version
+    ):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid or expired token",
         )
+    is_invite = token_payload.get("purpose") == "invite"
     user.hashed_password = hash_password(payload.new_password)
-    user.is_active = True  # accepting an invite activates the account
+    # Accepting an invite activates a pending account; a plain reset must not
+    # silently re-activate an account an admin has deactivated.
+    if is_invite:
+        user.is_active = True
+    user.token_version += 1  # single-use token + eject old sessions
     db.commit()

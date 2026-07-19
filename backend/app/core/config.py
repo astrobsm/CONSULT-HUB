@@ -10,6 +10,10 @@ class Settings(BaseSettings):
 
     app_name: str = "ConsultHUB API"
     api_prefix: str = "/api"
+    # Dev only. When true, console message transports log full bodies (so reset/
+    # invite/activation links are clickable). MUST stay false in production —
+    # those bodies contain single-use account tokens and patient PII.
+    debug: bool = False
 
     # SQLite for dev; override with a PostgreSQL URL in production.
     database_url: str = "sqlite:///./consulthub.db"
@@ -62,6 +66,21 @@ class Settings(BaseSettings):
     @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+    def startup_warnings(self) -> list[str]:
+        """Non-fatal misconfigurations to surface loudly at boot."""
+        warnings: list[str] = []
+        if self.secret_key == "dev-insecure-change-me-please":
+            warnings.append(
+                "SECRET_KEY is the built-in insecure default — anyone can forge "
+                "admin tokens. Set a strong SECRET_KEY before deploying."
+            )
+        if not self.debug and self.smtp_host is None:
+            warnings.append(
+                "SMTP is not configured; emails (incl. reset/invite links) will "
+                "not be delivered. Configure SMTP_HOST for production."
+            )
+        return warnings
 
 
 @lru_cache

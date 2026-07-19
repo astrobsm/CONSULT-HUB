@@ -28,7 +28,7 @@ from app.core.database import Base, SessionLocal, engine
 from app.core.escalation import run_escalations_job
 from app.services.waiting_reminders import run_reminders_job
 from app.core.realtime import manager as realtime
-from app.core.security import decode_access_token
+from app.core.security import decode_access_token, token_is_current
 from app.models.entities import User
 
 # Import models so their tables register on Base.metadata.
@@ -39,6 +39,9 @@ logger = logging.getLogger("consulthub")
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    for warning in settings.startup_warnings():
+        logger.warning("CONFIG: %s", warning)
+
     # Dev convenience: auto-create tables. Use Alembic in production.
     Base.metadata.create_all(bind=engine)
 
@@ -78,9 +81,18 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(title=settings.app_name, version="0.1.0", lifespan=lifespan)
 
+# We send credentials cross-origin, so a wildcard origin is forbidden — the
+# combination would let any site make authenticated calls on a user's behalf.
+_cors_origins = settings.cors_origins_list
+if "*" in _cors_origins:
+    raise RuntimeError(
+        "CORS_ORIGINS must list explicit origins, not '*', because "
+        "allow_credentials is enabled."
+    )
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins_list,
+    allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -104,12 +116,21 @@ async def websocket_endpoint(
     except Exception:
         raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION)
 
+    # Only staff access tokens open this channel — reject patient/purpose tokens
+    # (which would otherwise resolve to the User row sharing that id).
+    if payload.get("typ") != "staff":
+        raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION)
+
     db = SessionLocal()
     try:
         user = db.get(User, user_id)
     finally:
         db.close()
-    if user is None or not user.is_active:
+    if (
+        user is None
+        or not user.is_active
+        or not token_is_current(payload, user.token_version)
+    ):
         raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION)
 
     await realtime.connect(user_id, websocket)

@@ -106,10 +106,13 @@ def download_attachment(
     path = storage.full_path(att.storage_key)
     if not path.exists():
         raise HTTPException(status_code=404, detail="File missing from storage")
+    # filename= forces Content-Disposition: attachment (no inline render), and
+    # nosniff stops the browser overriding the stored (client-supplied) type.
     return FileResponse(
         path,
         media_type=att.content_type,
         filename=att.filename,
+        headers={"X-Content-Type-Options": "nosniff"},
     )
 
 

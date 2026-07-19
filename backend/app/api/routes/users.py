@@ -36,6 +36,20 @@ def _guard_role_assignment(actor: User, role: str) -> None:
         )
 
 
+def _require_institution(role: str, institution_id: int | None) -> None:
+    """Every non-super account MUST belong to a tenant.
+
+    Tenant scoping treats `institution_id IS NULL` as "super admin, sees all".
+    A non-super user with a null institution would silently bypass every
+    tenant boundary, so that combination is forbidden at creation time.
+    """
+    if role != SUPER_ADMIN and institution_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="A non-super-admin user must belong to an institution",
+        )
+
+
 @router.get("/roles", response_model=list[str])
 def list_roles(_: User = Depends(get_current_user)) -> list[str]:
     return ALL_ROLES
@@ -73,6 +87,7 @@ def create_user(
         if admin.role == SUPER_ADMIN
         else admin.institution_id
     )
+    _require_institution(payload.role, institution_id)
     return crud.create_user(db, payload, institution_id=institution_id)
 
 
@@ -95,6 +110,7 @@ def invite_user(
         if admin.role == SUPER_ADMIN
         else admin.institution_id
     )
+    _require_institution(payload.role, institution_id)
     # Create with an unguessable placeholder password; the invitee sets a real
     # one via the emailed link.
     user = crud.create_user(
@@ -110,7 +126,10 @@ def invite_user(
         institution_id=institution_id,
     )
     token = create_purpose_token(
-        user.id, "invite", settings.invite_token_expire_minutes
+        user.id,
+        "invite",
+        settings.invite_token_expire_minutes,
+        token_version=user.token_version,
     )
     link = f"{settings.frontend_base_url}/set-password?token={token}"
     send_email(

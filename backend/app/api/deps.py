@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.roles import ADMIN_ROLES, SUPER_ADMIN
-from app.core.security import decode_access_token
+from app.core.security import decode_access_token, token_is_current
 from app.core.database import get_db
 from app.models.entities import Patient, User
 
@@ -34,12 +34,16 @@ def get_current_user(
     except (jwt.PyJWTError, KeyError, ValueError, TypeError):
         raise _credentials_exc
 
-    # Patient portal tokens must never authenticate a staff request.
-    if payload.get("typ") == "patient":
+    # Allowlist: only genuine staff access tokens authenticate a staff request.
+    # This rejects patient-portal tokens AND purpose tokens (reset/invite/portal),
+    # which share the same signing key but carry a different `typ`.
+    if payload.get("typ") != "staff":
         raise _credentials_exc
 
     user = db.get(User, user_id)
     if user is None or not user.is_active:
+        raise _credentials_exc
+    if not token_is_current(payload, user.token_version):
         raise _credentials_exc
     return user
 
@@ -60,6 +64,8 @@ def get_current_patient(
 
     patient = db.get(Patient, patient_id)
     if patient is None or not patient.hashed_password:
+        raise _credentials_exc
+    if not token_is_current(payload, patient.token_version):
         raise _credentials_exc
     return patient
 

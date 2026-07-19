@@ -1,9 +1,11 @@
 # ConsultHUB — full stack: PostgreSQL + FastAPI + nginx-served frontend.
 #
+#   cp .env.example .env      # then edit SECRET_KEY (required)
 #   docker compose up --build
-#   open http://localhost:8080   (admin@consulthub.local / consulthub)
+#   open http://localhost:8080
 #
-# Override secrets via a .env file next to this one (see the `environment` keys).
+# SECRET_KEY is REQUIRED (no insecure default) — compose won't start without it.
+# Seeding the demo data (with a known admin password) is opt-in via SEED_ON_START.
 
 services:
   db:
@@ -24,9 +26,13 @@ services:
     build: ./backend
     environment:
       DATABASE_URL: postgresql+psycopg://consulthub:${POSTGRES_PASSWORD:-consulthub}@db:5432/consulthub
-      SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
+      # Required — no default. A shared/known key lets anyone forge admin tokens.
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required — copy .env.example to .env and set it}
       FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:8080}
-      SEED_ON_START: ${SEED_ON_START:-true}
+      # Seeds a demo tenant + users with a KNOWN password. Off by default; only
+      # enable for local demos, never on an internet-reachable deployment.
+      SEED_ON_START: ${SEED_ON_START:-false}
+      DEBUG: ${DEBUG:-false}
       # Optional integrations (else console fallback):
       SMTP_HOST: ${SMTP_HOST:-}
       TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}

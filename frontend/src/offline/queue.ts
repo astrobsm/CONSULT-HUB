@@ -23,6 +23,30 @@ export interface QueuedMutation {
   body?: string
   label: string
   createdAt: number
+  // The token subject (user/patient id) that created this mutation. A queued
+  // write is only ever replayed while THAT identity is signed in — never under
+  // a different user who logs into the same device later.
+  subject?: string
+}
+
+// Queued mutations expire after a week so they can't be replayed as a stale,
+// surprising write long after the fact (or linger forever unreplayable).
+const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
+
+function tokenKey(channel: Channel): string {
+  return channel === 'patient' ? PATIENT_TOKEN_KEY : STAFF_TOKEN_KEY
+}
+
+/** Best-effort read of the `sub` claim from a JWT (no signature check). */
+function tokenSubject(token: string | null): string | null {
+  if (!token) return null
+  try {
+    const payload = token.split('.')[1]
+    const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'))
+    return JSON.parse(json).sub ?? null
+  } catch {
+    return null
+  }
 }
 
 export class OfflineQueued extends Error {
@@ -59,7 +83,13 @@ async function withStore<T>(
 }
 
 export function enqueue(item: QueuedMutation): Promise<number> {
-  return withStore<number>('readwrite', (s) => s.add(item)).then((id) => {
+  // Stamp the mutation with the identity that created it, so a later user on a
+  // shared device can never have it replayed under their token.
+  const subject =
+    item.subject ?? tokenSubject(localStorage.getItem(tokenKey(item.channel)))
+  return withStore<number>('readwrite', (s) =>
+    s.add({ ...item, subject: subject ?? undefined }),
+  ).then((id) => {
     notify()
     requestBackgroundSync()
     return id
@@ -90,9 +120,15 @@ export async function flushQueue(): Promise<void> {
   try {
     const items = await getAll()
     for (const item of items) {
-      const token = localStorage.getItem(
-        item.channel === 'patient' ? PATIENT_TOKEN_KEY : STAFF_TOKEN_KEY,
-      )
+      // Drop mutations that have aged out rather than replaying a stale write.
+      if (Date.now() - item.createdAt > MAX_AGE_MS) {
+        if (item.id != null) await remove(item.id)
+        continue
+      }
+      const token = localStorage.getItem(tokenKey(item.channel))
+      // Only replay under the same identity that enqueued it. If nobody (or a
+      // different user) is signed in on this channel, leave it queued.
+      if (item.subject && tokenSubject(token) !== item.subject) continue
       try {
         const res = await fetch(item.url, {
           method: item.method,

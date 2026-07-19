@@ -17,17 +17,33 @@ from app.core.config import settings
 logger = logging.getLogger("consulthub.email")
 
 
+def _mask(email: str) -> str:
+    """Redact an address for logs: 'jane@x.com' -> 'j***@x.com'."""
+    local, _, domain = email.partition("@")
+    head = local[:1] if local else ""
+    return f"{head}***@{domain}" if domain else "***"
+
+
 def send_email(to: str, subject: str, body: str) -> bool:
     """Send (or log) an email. Returns True if handed off without error."""
     if not to:
         return False
 
     if not settings.smtp_host:
-        # No SMTP configured (dev): surface the message at WARNING so links
-        # (password reset / invite) are visible in the console.
-        logger.warning(
-            "EMAIL (console, no SMTP) to=%s | %s\n%s", to, subject, body
-        )
+        # No SMTP configured. In debug (dev) show the full body so reset/invite
+        # links are clickable; otherwise redact — the body carries single-use
+        # account tokens that must never land in production logs.
+        if settings.debug:
+            logger.warning(
+                "EMAIL (console, no SMTP) to=%s | %s\n%s", to, subject, body
+            )
+        else:
+            logger.warning(
+                "EMAIL (console, no SMTP) to=%s | %s [body redacted; set "
+                "DEBUG=true to show, or configure SMTP]",
+                _mask(to),
+                subject,
+            )
         return True
 
     try:

@@ -1,5 +1,6 @@
 import type { Appointment, Availability, Clinic } from '../api/types'
 import { enqueue, OfflineQueued } from '../offline/queue'
+import { clearApiCache } from '../registerSW'
 
 const BASE = '/api'
 const PKEY = 'consulthub_patient_token'
@@ -33,6 +34,7 @@ async function preq<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, { ...init, headers })
   if (res.status === 401) {
     setPatientToken(null)
+    clearApiCache()
     throw new PortalUnauthorized('Please sign in again.')
   }
   if (!res.ok) {
@@ -66,6 +68,7 @@ export async function portalLogin(
     throw new Error(detail ?? 'Login failed')
   }
   const data = await res.json()
+  clearApiCache() // start clean — no prior user's cached portal responses
   setPatientToken(data.access_token)
   return data.patient as PortalPatient
 }
@@ -133,6 +136,7 @@ async function queuedMutate<T>(
   }
   if (res.status === 401) {
     setPatientToken(null)
+    clearApiCache()
     throw new Error('Session expired. Please sign in again.')
   }
   if (!res.ok) {
@@ -165,4 +169,5 @@ export function portalCancel(id: number): Promise<Appointment> {
 }
 export function portalLogout() {
   setPatientToken(null)
+  clearApiCache()
 }

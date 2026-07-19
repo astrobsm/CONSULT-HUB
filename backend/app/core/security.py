@@ -63,13 +63,21 @@ def decode_access_token(token: str) -> dict[str, Any]:
 
 
 def create_purpose_token(
-    subject: str | int, purpose: str, minutes: int
+    subject: str | int, purpose: str, minutes: int, token_version: int = 0
 ) -> str:
-    """A short-lived, single-purpose token (password reset / invite)."""
+    """A short-lived, single-purpose token (password reset / invite / portal).
+
+    Carries `typ="purpose"` so it can never be mistaken for an access token by
+    the request authenticators (which require `typ` in {"staff", "patient"}),
+    and `tv` (the subject's token version at issue) so it becomes invalid once
+    it — or any later password change — bumps that version.
+    """
     now = datetime.now(timezone.utc)
     payload = {
         "sub": str(subject),
+        "typ": "purpose",
         "purpose": purpose,
+        "tv": token_version,
         "iat": now,
         "exp": now + timedelta(minutes=minutes),
     }
@@ -78,11 +86,27 @@ def create_purpose_token(
     )
 
 
-def decode_purpose_token(token: str, allowed_purposes: set[str]) -> int:
-    """Return the subject id if the token is valid and its purpose is allowed."""
+def decode_purpose_token(
+    token: str, allowed_purposes: set[str]
+) -> dict[str, Any]:
+    """Return the decoded payload if valid and its purpose is allowed."""
     payload = jwt.decode(
         token, settings.secret_key, algorithms=[settings.jwt_algorithm]
     )
+    if payload.get("typ") != "purpose":
+        raise jwt.InvalidTokenError("Not a purpose token")
     if payload.get("purpose") not in allowed_purposes:
         raise jwt.InvalidTokenError("Unexpected token purpose")
-    return int(payload["sub"])
+    return payload
+
+
+def token_is_current(payload: dict[str, Any], token_version: int) -> bool:
+    """False if the token's version is behind the subject's current version.
+
+    Bumping the subject's `token_version` on a password change invalidates every
+    outstanding token that embedded the old value — this ejects existing
+    sessions and makes reset/invite/portal tokens single-use. Tokens minted
+    before this claim existed default to version 0 (matching un-migrated rows),
+    so a deploy doesn't force everyone to re-authenticate.
+    """
+    return int(payload.get("tv", 0)) == token_version

@@ -21,6 +21,8 @@ import type {
   WaitingEntry,
 } from './types'
 
+import { clearApiCache } from '../registerSW'
+
 const BASE = '/api'
 const TOKEN_KEY = 'consulthub_token'
 
@@ -47,6 +49,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   if (res.status === 401) {
     setToken(null)
+    clearApiCache() // don't leave this user's PHI cached for the next person
     // Notify the app so auth state (and the UI) can reset.
     window.dispatchEvent(new Event('consulthub:unauthorized'))
     throw new UnauthorizedError('Session expired. Please sign in again.')
@@ -615,6 +618,7 @@ export async function login(
     throw new Error(detail ?? 'Login failed')
   }
   const data = (await res.json()) as TokenResponse
+  clearApiCache() // start this session with no prior user's cached responses
   setToken(data.access_token)
   return data.user
 }
@@ -667,4 +671,5 @@ export function confirmPasswordSet(
 
 export function logout() {
   setToken(null)
+  clearApiCache()
 }

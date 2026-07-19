@@ -69,6 +69,10 @@ class User(Base):
     designation: Mapped[str | None] = mapped_column(String(100), nullable=True)
     role: Mapped[str] = mapped_column(String(50), default="registrar")
     is_active: Mapped[bool] = mapped_column(default=True)
+    # Bumped on every password change/reset. Tokens embed the value current at
+    # issue; a mismatch is rejected — this invalidates outstanding sessions and
+    # makes reset/invite tokens single-use once they set a password.
+    token_version: Mapped[int] = mapped_column(default=0, server_default="0")
     # Appearance preferences.
     theme: Mapped[str] = mapped_column(
         String(10), default="system", server_default="system"
@@ -99,6 +103,8 @@ class Patient(Base):
     hashed_password: Mapped[str | None] = mapped_column(
         String(255), nullable=True
     )
+    # Bumped on portal password set/change; stale portal tokens are rejected.
+    token_version: Mapped[int] = mapped_column(default=0, server_default="0")
     blood_group: Mapped[str | None] = mapped_column(String(10), nullable=True)
     genotype: Mapped[str | None] = mapped_column(String(10), nullable=True)
     weight_kg: Mapped[float | None] = mapped_column(nullable=True)

@@ -25,6 +25,7 @@ from app.core.security import (
     create_purpose_token,
     decode_purpose_token,
     hash_password,
+    token_is_current,
 )
 from app.crud import patient as crud_patient
 from app.crud import scheduling as crud
@@ -73,7 +74,10 @@ def activate(
     )
     if patient is not None and patient.email:
         token = create_purpose_token(
-            patient.id, "portal", settings.invite_token_expire_minutes
+            patient.id,
+            "portal",
+            settings.invite_token_expire_minutes,
+            token_version=patient.token_version,
         )
         link = f"{settings.frontend_base_url}/portal/set-password?token={token}"
         send_email(
@@ -90,17 +94,31 @@ def set_password(
     payload: PortalSetPassword, db: Session = Depends(get_db)
 ) -> None:
     try:
-        patient_id = decode_purpose_token(payload.token, {"portal"})
+        token_payload = decode_purpose_token(payload.token, {"portal"})
+        patient_id = int(token_payload["sub"])
     except (jwt.PyJWTError, ValueError, TypeError, KeyError):
         raise HTTPException(
             status_code=400, detail="Invalid or expired token"
         )
     patient = db.get(Patient, patient_id)
-    if patient is None:
+    # Reject a token already consumed / superseded by a later password change.
+    if patient is None or not token_is_current(
+        token_payload, patient.token_version
+    ):
         raise HTTPException(
             status_code=400, detail="Invalid or expired token"
         )
+    # Portal login is by email; refuse to activate a second account that would
+    # collide on the same login email.
+    if patient.email and crud_patient.other_activated_with_email(
+        db, email=patient.email, exclude_patient_id=patient.id
+    ):
+        raise HTTPException(
+            status_code=409,
+            detail="This email is already linked to an active portal account.",
+        )
     patient.hashed_password = hash_password(payload.password)
+    patient.token_version += 1  # single-use token + eject old sessions
     db.commit()
 
 
@@ -119,7 +137,12 @@ def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
     token = create_access_token(
-        patient.id, extra={"typ": "patient", "inst": patient.institution_id}
+        patient.id,
+        extra={
+            "typ": "patient",
+            "tv": patient.token_version,
+            "inst": patient.institution_id,
+        },
     )
     return PortalToken(
         access_token=token, patient=PatientPortalRead.model_validate(patient)

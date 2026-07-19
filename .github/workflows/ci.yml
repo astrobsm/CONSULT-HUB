@@ -48,6 +48,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Write .env (SECRET_KEY is required; seed demo data for the smoke test)
+        run: |
+          cat > .env <<'EOF'
+          SECRET_KEY=ci-test-secret-key-not-used-in-production-000
+          SEED_ON_START=true
+          EOF
       - name: Build and start the full stack
         run: docker compose up -d --build
       - name: Wait for the app to become healthy
